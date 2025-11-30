@@ -29,9 +29,9 @@ var ptraceRestrictGadgetBytes []byte
 var Version = "latest"
 
 const (
-	fsRestrictGadgetImageRepo     = "ghcr.io/dorser/micromize/fs-restrict"
-	kmodRestrictGadgetImageRepo   = "ghcr.io/dorser/micromize/kmod-restrict"
-	ptraceRestrictGadgetImageRepo = "ghcr.io/dorser/micromize/ptrace-restrict"
+	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/fs-restrict"
+	kmodRestrictGadgetImageRepo   = "ghcr.io/micromize-dev/micromize/kmod-restrict"
+	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
 )
 
 func main() {

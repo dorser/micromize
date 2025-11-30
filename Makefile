@@ -1,5 +1,5 @@
 TAG := $(shell git describe --tags --always --dirty)
-CONTAINER_REPO ?= ghcr.io/dorser/micromize
+CONTAINER_REPO ?= ghcr.io/micromize-dev/micromize
 IMAGE_TAG ?= $(TAG)
 CLANG_FORMAT ?= clang-format
 OUTPUT_DIR := dist
