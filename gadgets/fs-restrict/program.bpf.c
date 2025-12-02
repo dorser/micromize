@@ -28,10 +28,7 @@ is_file_in_container_rootfs(struct task_struct *task, struct file *file) {
   // Get the root mount of the current process (container root)
   root_mnt = BPF_CORE_READ(task, fs, root.mnt);
 
-  if (file_mnt != root_mnt)
-    return false;
-
-  return true;
+  return file_mnt == root_mnt;
 }
 
 SEC("lsm/file_open")
