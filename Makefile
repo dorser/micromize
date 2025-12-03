@@ -7,8 +7,7 @@ GOARCHS := amd64 arm64
 LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.46.0 \
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
-GADGETS := fs-restrict kmod-restrict ptrace-restrict
-
+GADGETS := fs-restrict cap-restrict ptrace-restrict 
 .PHONY: build-all
 build-all: $(GADGETS) $(GOARCHS)
 
@@ -45,9 +44,9 @@ $(GOARCHS):
 run-fs-restrict:
 	sudo -E ig run $(CONTAINER_REPO)/fs-restrict:$(IMAGE_TAG) $$PARAMS
 
-.PHONY: run-kmod-restrict
-run-kmod-restrict:
-	sudo -E ig run $(CONTAINER_REPO)/kmod-restrict:$(IMAGE_TAG) $$PARAMS
+.PHONY: run-cap-restrict
+run-cap-restrict:
+	sudo -E ig run $(CONTAINER_REPO)/cap-restrict:$(IMAGE_TAG) $$PARAMS
 
 .PHONY: push
 push:

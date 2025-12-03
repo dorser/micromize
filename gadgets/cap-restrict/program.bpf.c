@@ -14,7 +14,7 @@ GADGET_PARAM(enforce);
 
 GADGET_TRACER_MAP(events, 1024 * 256);
 
-GADGET_TRACER(kmod_restrict, events, event);
+GADGET_TRACER(cap_restrict, events, event);
 
 SEC("lsm/capable")
 int BPF_PROG(micromize_capable, const struct cred *cred,
@@ -22,21 +22,22 @@ int BPF_PROG(micromize_capable, const struct cred *cred,
   if (gadget_should_discard_data_current())
     return 0;
 
-  if (cap == CAP_SYS_MODULE) {
-    struct event *event;
-    event = gadget_reserve_buf(&events, sizeof(*event));
-    if (!event)
-      return 0;
+  if (cap != CAP_SYS_MODULE && cap != CAP_SYS_ADMIN)
+    return 0;
 
-    gadget_process_populate(&event->process);
-    event->timestamp_raw = bpf_ktime_get_boot_ns();
+  struct event *event;
+  event = gadget_reserve_buf(&events, sizeof(*event));
+  if (!event)
+    return 0;
 
-    gadget_submit_buf(ctx, &events, event, sizeof(*event));
+  gadget_process_populate(&event->process);
+  event->timestamp_raw = bpf_ktime_get_boot_ns();
+  event->cap = cap;
 
-    if (enforce) {
-      return -EPERM;
-    }
-  }
+  gadget_submit_buf(ctx, &events, event, sizeof(*event));
+
+  if (enforce)
+    return -EPERM;
 
   return 0;
 }

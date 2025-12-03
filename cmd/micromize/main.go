@@ -18,8 +18,8 @@ import (
 //go:embed build/fs-restrict.tar
 var fsRestrictGadgetBytes []byte
 
-//go:embed build/kmod-restrict.tar
-var kmodRestrictGadgetBytes []byte
+//go:embed build/cap-restrict.tar
+var capRestrictGadgetBytes []byte
 
 //go:embed build/ptrace-restrict.tar
 var ptraceRestrictGadgetBytes []byte
@@ -30,7 +30,7 @@ var Version = "latest"
 
 const (
 	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/fs-restrict"
-	kmodRestrictGadgetImageRepo   = "ghcr.io/micromize-dev/micromize/kmod-restrict"
+	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/cap-restrict"
 	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
 )
 
@@ -90,9 +90,9 @@ func main() {
 		Params:    commonParams,
 	})
 
-	registry.Register("kmod-restrict", &gadget.GadgetConfig{
-		Bytes:     kmodRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", kmodRestrictGadgetImageRepo, Version),
+	registry.Register("cap-restrict", &gadget.GadgetConfig{
+		Bytes:     capRestrictGadgetBytes,
+		ImageName: fmt.Sprintf("%s:%s", capRestrictGadgetImageRepo, Version),
 		Params:    commonParams,
 	})
 
