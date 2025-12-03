@@ -1,15 +1,15 @@
-name: kmod-restrict
-description: Restrict kernel module loading and unloading
+name: cap-restrict
+description: Restrict linux capabilities in containers
 homepageURL: 'TODO: Fill the gadget homepage URL'
 documentationURL: 'TODO: Fill the gadget documentation URL'
 sourceURL: 'TODO: Fill the gadget source code URL'
 datasources:
-  kmod_restrict:
+  cap_restrict:
     fields:
-      kmod_op:
+      cap:
         annotations:
           description: 'TODO: Fill field description'
-      op:
+      flags:
         annotations:
           description: 'TODO: Fill field description'
       process:
@@ -22,8 +22,8 @@ params:
   ebpf:
     enforce:
       key: enforce
-      defaultValue: "true"
-      description: Enforce the restriction (block) or just audit
+      defaultValue: ""
+      description: 'TODO: Fill parameter description'
     targ_comm:
       key: targ_comm
       defaultValue: ""

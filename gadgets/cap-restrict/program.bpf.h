@@ -14,4 +14,5 @@
 struct event {
   gadget_timestamp timestamp_raw;
   struct gadget_process process;
+  int cap;
 };
