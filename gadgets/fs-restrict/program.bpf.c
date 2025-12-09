@@ -37,12 +37,6 @@ static __always_inline u32 get_task_pid_ns_id(struct task_struct *task) {
   return BPF_CORE_READ(ns, ns.inum);
 }
 
-static __always_inline pid_t get_task_ns_pid(struct task_struct *task) {
-  struct pid *pid = BPF_CORE_READ(task, thread_pid);
-  unsigned int level = BPF_CORE_READ(pid, level);
-  return BPF_CORE_READ(pid, numbers[level].nr);
-}
-
 SEC("tp_btf/sched_process_fork")
 int BPF_PROG(micromize_sched_process_fork, struct task_struct *parent,
              struct task_struct *child) {
@@ -50,8 +44,9 @@ int BPF_PROG(micromize_sched_process_fork, struct task_struct *parent,
   u32 child_ns_id = get_task_pid_ns_id(child);
 
   if (parent_ns_id != child_ns_id) {
+    u32 tgid = BPF_CORE_READ(child, tgid);
     u8 state = CONTAINER_STATE_INIT;
-    bpf_map_update_elem(&container_state, &child_ns_id, &state, BPF_ANY);
+    bpf_map_update_elem(&container_state, &tgid, &state, BPF_ANY);
   }
   return 0;
 }
@@ -59,23 +54,18 @@ int BPF_PROG(micromize_sched_process_fork, struct task_struct *parent,
 SEC("tp_btf/sched_process_exec")
 int BPF_PROG(micromize_sched_process_exec, struct task_struct *p, pid_t old_pid,
              struct linux_binprm *bprm) {
-  u32 pid_ns_id = get_task_pid_ns_id(p);
-  pid_t pid = get_task_ns_pid(p);
-
-  if (pid == 1) {
-    u8 state = CONTAINER_STATE_RUNNING;
-    bpf_map_update_elem(&container_state, &pid_ns_id, &state, BPF_ANY);
-  }
+  u32 tgid = BPF_CORE_READ(p, tgid);
+  bpf_map_delete_elem(&container_state, &tgid);
   return 0;
 }
 
 SEC("tp_btf/sched_process_exit")
 int BPF_PROG(micromize_sched_process_exit, struct task_struct *p) {
-  u32 pid_ns_id = get_task_pid_ns_id(p);
-  pid_t pid = get_task_ns_pid(p);
+  u32 tgid = BPF_CORE_READ(p, tgid);
+  u32 pid = BPF_CORE_READ(p, pid);
 
-  if (pid == 1) {
-    bpf_map_delete_elem(&container_state, &pid_ns_id);
+  if (tgid == pid) {
+    bpf_map_delete_elem(&container_state, &tgid);
   }
   return 0;
 }
@@ -113,8 +103,8 @@ int BPF_PROG(micromize_file_open, struct file *file) {
 
   struct task_struct *task = bpf_get_current_task_btf();
 
-  u32 pid_ns_id = get_task_pid_ns_id(task);
-  u8 *state = bpf_map_lookup_elem(&container_state, &pid_ns_id);
+  u32 tgid = BPF_CORE_READ(task, tgid);
+  u8 *state = bpf_map_lookup_elem(&container_state, &tgid);
   if (state && *state == CONTAINER_STATE_INIT)
     return 0;
 
