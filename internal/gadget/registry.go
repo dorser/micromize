@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	gadgetcontext "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-context"
 	"github.com/micromize-dev/micromize/internal/runtime"
 )
 
@@ -50,11 +51,11 @@ func (r *Registry) RunAll(ctx context.Context) error {
 			return fmt.Errorf("creating context for gadget %s: %w", name, err)
 		}
 
-		go func(name string, config *GadgetConfig) {
+		go func(name string, config *GadgetConfig, gadgetCtx *gadgetcontext.GadgetContext) {
 			if err := r.runtimeManager.RunGadget(gadgetCtx, config.Params); err != nil {
 				slog.Error("Error running gadget", "name", name, "error", err)
 			}
-		}(name, config)
+		}(name, config, gadgetCtx)
 	}
 	return nil
 }
