@@ -2,6 +2,7 @@ package gadget
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -47,9 +48,12 @@ func TestRegistry_Register(t *testing.T) {
 
 func TestRegistry_RunAll(t *testing.T) {
 	done := make(chan struct{})
+	var once sync.Once
 	mockRuntime := &mockRuntimeManager{
 		runGadgetFunc: func(gadgetCtx *gadgetcontext.GadgetContext, params map[string]string) error {
-			close(done)
+			once.Do(func() {
+				close(done)
+			})
 			return nil
 		},
 	}
@@ -69,7 +73,7 @@ func TestRegistry_RunAll(t *testing.T) {
 	select {
 	case <-done:
 		// success
-	case <-time.After(1 * time.Second):
+	case <-time.After(2 * time.Millisecond):
 		t.Fatal("timeout waiting for RunGadget")
 	}
 }

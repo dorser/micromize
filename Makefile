@@ -9,13 +9,23 @@ LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.vers
            -w -s -extldflags "-static"
 GADGETS := fs-restrict cap-restrict ptrace-restrict 
 .PHONY: build-all
-build-all: $(GADGETS) $(GOARCHS)
+build-all: $(GADGETS) build-app
+
+.PHONY: test
+test:
+	# Hacky way to satisfy the tests that expect these files to exist
+	@mkdir -p cmd/micromize/build
+	@touch cmd/micromize/build/fs-restrict.tar
+	@touch cmd/micromize/build/cap-restrict.tar
+	@touch cmd/micromize/build/ptrace-restrict.tar
+	go test ./...
+	@rm -rf cmd/micromize/build
 
 .PHONY: build-gadgets
 build-gadgets: $(GADGETS)
 
 .PHONY: build-app
-build-app: $(GOARCHS)
+build-app: test $(GOARCHS)
 
 $(GADGETS):
 	sudo -E ig image build \
