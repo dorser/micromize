@@ -6,26 +6,35 @@ import (
 	"log/slog"
 
 	gadgetcontext "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-context"
-	"github.com/micromize-dev/micromize/internal/runtime"
 )
+
+// RuntimeManager defines the interface for running gadgets
+type RuntimeManager interface {
+	RunGadget(gadgetCtx *gadgetcontext.GadgetContext, params map[string]string) error
+}
+
+// GadgetContextCreator defines the interface for creating gadget contexts
+type GadgetContextCreator interface {
+	CreateContext(ctx context.Context, gadgetBytes []byte, gadgetImage string) (*gadgetcontext.GadgetContext, error)
+}
 
 // GadgetConfig holds the configuration for a single gadget
 type GadgetConfig struct {
 	Bytes     []byte
 	ImageName string
 	Params    map[string]string
-	Context   *ContextManager // Optional context manager override
+	Context   GadgetContextCreator // Optional context manager override
 }
 
 // Registry manages multiple gadgets and their execution
 type Registry struct {
-	defaultContextManager *ContextManager
-	runtimeManager        *runtime.Manager
+	defaultContextManager GadgetContextCreator
+	runtimeManager        RuntimeManager
 	gadgets               map[string]*GadgetConfig
 }
 
 // NewRegistry creates a new gadget registry
-func NewRegistry(defaultContextManager *ContextManager, runtimeManager *runtime.Manager) *Registry {
+func NewRegistry(defaultContextManager GadgetContextCreator, runtimeManager RuntimeManager) *Registry {
 	return &Registry{
 		defaultContextManager: defaultContextManager,
 		runtimeManager:        runtimeManager,
