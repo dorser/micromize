@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 
 	gadgetcontext "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-context"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
@@ -25,6 +26,7 @@ func NewContextManager(operators []operators.DataOperator) *ContextManager {
 
 // CreateContext creates a new gadget context with the given configuration
 func (cm *ContextManager) CreateContext(ctx context.Context, gadgetBytes []byte, gadgetImage string) (*gadgetcontext.GadgetContext, error) {
+	slog.Debug("Creating gadget context", "image", gadgetImage)
 	// Create OCI target from gadget bytes
 	reader := bytes.NewReader(gadgetBytes)
 	fs, err := tarfs.New(reader)

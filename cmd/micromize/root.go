@@ -4,11 +4,13 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/micromize-dev/micromize/internal/gadget"
+	"github.com/micromize-dev/micromize/internal/logger"
 	"github.com/micromize-dev/micromize/internal/operators"
 	"github.com/micromize-dev/micromize/internal/runtime"
 	"github.com/micromize-dev/micromize/internal/utils"
@@ -23,12 +25,16 @@ const (
 
 var (
 	enforce bool
+	verbose bool
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "micromize",
 	Short: "micromize is a security hardening tool for containerized applications",
 	Long:  `micromize is a security hardening tool designed to detect and break the post-exploit kill chain for containerized applications using BPF LSM.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		logger.Setup(verbose)
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run(cmd.Context())
 	},
@@ -43,14 +49,15 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&enforce, "enforce", true, "Enforce restrictions")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 }
 
 func run(ctx context.Context) error {
-	fmt.Println("Starting micromize...")
+	slog.Info("Starting micromize...")
 	if enforce {
-		fmt.Println("Enforcement enabled")
+		slog.Info("Enforcement enabled")
 	} else {
-		fmt.Println("Enforcement disabled (audit mode)")
+		slog.Info("Enforcement disabled (audit mode)")
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -61,7 +68,7 @@ func run(ctx context.Context) error {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		fmt.Println("Received shutdown signal")
+		slog.Info("Received shutdown signal")
 		cancel()
 	}()
 

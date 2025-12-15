@@ -3,6 +3,7 @@ package gadget
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/micromize-dev/micromize/internal/runtime"
 )
@@ -51,7 +52,7 @@ func (r *Registry) RunAll(ctx context.Context) error {
 
 		go func(name string, config *GadgetConfig) {
 			if err := r.runtimeManager.RunGadget(gadgetCtx, config.Params); err != nil {
-				fmt.Printf("Error running gadget %s: %v\n", name, err)
+				slog.Error("Error running gadget", "name", name, "error", err)
 			}
 		}(name, config)
 	}
