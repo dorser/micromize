@@ -2,12 +2,13 @@ package operators
 
 import (
 	"fmt"
+	"log/slog"
 
 	igoperators "github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
+	clioperator "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/cli"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/ebpf"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators/localmanager"
 	ocihandler "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/oci-handler"
-	clioperator "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/cli"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/utils/host"
 )
 
@@ -15,6 +16,7 @@ import (
 type DataOperator = igoperators.DataOperator
 
 func NewLocalManager() (igoperators.DataOperator, error) {
+	slog.Debug("Initializing local manager operator")
 	host.Init(host.Config{})
 	localManagerOp := localmanager.LocalManagerOperator
 	localManagerParams := localManagerOp.GlobalParamDescs().ToParams()
@@ -27,10 +29,12 @@ func NewLocalManager() (igoperators.DataOperator, error) {
 
 // NewOCIHandler creates and returns the OCI handler operator
 func NewOCIHandler() igoperators.DataOperator {
+	slog.Debug("Creating OCI handler operator")
 	return ocihandler.OciHandler
 }
 
 // NewCLIOperator creates and returns the CLI operator
 func NewCLIOperator() igoperators.DataOperator {
+	slog.Debug("Creating CLI operator")
 	return clioperator.CLIOperator
 }
