@@ -40,12 +40,12 @@ make build-all
 
 1.  **Enforce Mode** (Default): Blocks restricted actions and logs them.
     ```bash
-    sudo dist/micromize-linux-[amd64|arm64] -enforce=true
+    sudo dist/micromize-linux-[amd64|arm64] --enforce=true
     ```
 
 2.  **Audit Mode**: Logs events without blocking. Useful for profiling workloads.
     ```bash
-    sudo dist/micromize-linux-[amd64|arm64] -enforce=false
+    sudo dist/micromize-linux-[amd64|arm64] --enforce=false
     ```
 
 ### Output
