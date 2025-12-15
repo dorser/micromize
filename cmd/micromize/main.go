@@ -1,18 +1,7 @@
 package main
 
 import (
-	"context"
-	_ "embed"
-	"flag"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"github.com/micromize-dev/micromize/internal/gadget"
-	"github.com/micromize-dev/micromize/internal/operators"
-	"github.com/micromize-dev/micromize/internal/runtime"
-	"github.com/micromize-dev/micromize/internal/utils"
+_ "embed"
 )
 
 //go:embed build/fs-restrict.tar
@@ -28,86 +17,6 @@ var ptraceRestrictGadgetBytes []byte
 // It is set at build time via -ldflags.
 var Version = "latest"
 
-const (
-	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/fs-restrict"
-	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/cap-restrict"
-	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
-)
-
 func main() {
-	enforce := flag.Bool("enforce", true, "Enforce restrictions")
-	flag.Parse()
-
-	fmt.Println("Starting micromize...")
-	if *enforce {
-		fmt.Println("Enforcement enabled")
-	} else {
-		fmt.Println("Enforcement disabled (audit mode)")
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		fmt.Println("Received shutdown signal")
-		cancel()
-	}()
-
-	runtimeManager, err := runtime.NewManager()
-	if err != nil {
-		fmt.Printf("initializing runtime manager: %v", err)
-		os.Exit(1)
-	}
-
-	defer runtimeManager.Close()
-
-	ociHandlerOp := operators.NewOCIHandler()
-	cliOp := operators.NewCLIOperator()
-
-	localManagerOp, err := operators.NewLocalManager()
-	if err != nil {
-		fmt.Printf("creating local manager operator: %v", err)
-		os.Exit(1)
-	}
-
-	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, cliOp})
-
-	// Create gadget registry
-	registry := gadget.NewRegistry(contextManager, runtimeManager)
-
-	commonParams := map[string]string{
-		"operator.cli.output":       "json",
-		"operator.oci.ebpf.enforce": fmt.Sprintf("%d", utils.BoolToInt(*enforce)),
-	}
-
-	registry.Register("fs-restrict", &gadget.GadgetConfig{
-		Bytes:     fsRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", fsRestrictGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
-
-	registry.Register("cap-restrict", &gadget.GadgetConfig{
-		Bytes:     capRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", capRestrictGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
-
-	registry.Register("ptrace-restrict", &gadget.GadgetConfig{
-		Bytes:     ptraceRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", ptraceRestrictGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
-
-	// Run all gadgets
-	if err := registry.RunAll(ctx); err != nil {
-		fmt.Printf("running gadgets: %v", err)
-		os.Exit(1)
-	}
-
-	// Wait for context to be done (which happens on signal)
-	<-ctx.Done()
+	Execute()
 }
