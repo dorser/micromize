@@ -13,13 +13,7 @@ build-all: $(GADGETS) build-app
 
 .PHONY: test
 test:
-	# Hacky way to satisfy the tests that expect these files to exist
-	@mkdir -p cmd/micromize/build
-	@touch cmd/micromize/build/fs-restrict.tar
-	@touch cmd/micromize/build/cap-restrict.tar
-	@touch cmd/micromize/build/ptrace-restrict.tar
 	go test ./...
-	@rm -rf cmd/micromize/build
 
 .PHONY: build-gadgets
 build-gadgets: $(GADGETS)
@@ -48,7 +42,7 @@ $(GOARCHS):
 	cp build/gadgets/*.tar build/src/cmd/micromize/build/
 	
 	# Build
-	cd build/src && GOOS=linux GOARCH=$@ CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o ../../$(OUTPUT_DIR)/micromize-linux-$@ ./cmd/micromize
+	cd build/src && GOOS=linux GOARCH=$@ CGO_ENABLED=0 go build -tags release -ldflags "$(LDFLAGS)" -o ../../$(OUTPUT_DIR)/micromize-linux-$@ ./cmd/micromize
 
 .PHONY: run-fs-restrict
 run-fs-restrict:
