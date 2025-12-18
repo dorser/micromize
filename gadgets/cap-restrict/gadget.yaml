@@ -15,6 +15,9 @@ datasources:
       process:
         annotations:
           description: 'TODO: Fill field description'
+      syscall:
+        annotations:
+          description: 'TODO: Fill field description'
       timestamp_raw:
         annotations:
           description: 'TODO: Fill field description'
