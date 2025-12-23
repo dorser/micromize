@@ -1,0 +1,27 @@
+version: 0.1.0
+name: cap-restrict
+displayName: cap restrict
+createdAt: "2025-12-23T12:00:00Z"
+description: "Restrict privileged capabilities"
+logoURL: "https://inspektor-gadget.io/media/brand-icon.svg"
+license: "Apache-2.0"
+homeURL: "https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict"
+containersImages:
+    - name: gadget
+      image: "ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest"
+      platforms:
+        - linux/amd64
+        - linux/arm64
+keywords:
+    - gadget
+    - security
+links:
+    - name: source
+      url: "https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict"
+install: |
+    # Run
+    ```bash
+    sudo ig run ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest
+    ```
+provider:
+    name: Micromize
