@@ -1,0 +1,72 @@
+name: Release Gadgets
+
+on:
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  IG_VERSION: v0.47.0
+
+jobs:
+  release-gadgets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # Required for cosign keyless signing
+
+    strategy:
+      matrix:
+        gadget: [fs-restrict, cap-restrict, ptrace-restrict]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set TAG_NAME
+        run: |
+          echo "TAG_NAME=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Install ig
+        run: |
+          echo "Installing ig version ${{ env.IG_VERSION }}..."
+          curl -sL "https://github.com/inspektor-gadget/inspektor-gadget/releases/download/${{ env.IG_VERSION }}/ig-linux-amd64-${{ env.IG_VERSION }}.tar.gz" | sudo tar -C /usr/local/bin -xzf - ig
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Gadget
+        run: |
+          sudo -E ig image build \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:${{ env.TAG_NAME }} \
+            --update-metadata \
+            gadgets/${{ matrix.gadget }}
+
+          if [ "${{ github.event_name }}" == "release" ]; then
+            sudo -E ig image tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:${{ env.TAG_NAME }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:latest
+          fi
+
+      - name: Push Gadget
+        run: |
+          sudo -E ig image push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:${{ env.TAG_NAME }}
+
+          if [ "${{ github.event_name }}" == "release" ]; then
+            sudo -E ig image push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:latest
+          fi
+
+      - name: Sign the images with GitHub OIDC Token
+        run: |
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:${{ env.TAG_NAME }}
+
+          if [ "${{ github.event_name }}" == "release" ]; then
+            cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.gadget }}:latest
+          fi
