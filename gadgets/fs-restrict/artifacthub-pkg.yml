@@ -8,7 +8,7 @@ license: "Apache-2.0"
 homeURL: "https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict"
 containersImages:
     - name: gadget
-      image: "ghcr.io/micromize-dev/micromize/gadgets/fs-restrict:latest"
+      image: "ghcr.io/micromize-dev/micromize/fs-restrict:latest"
       platforms:
         - linux/amd64
         - linux/arm64
@@ -21,7 +21,7 @@ links:
 install: |
     # Run
     ```bash
-    sudo ig run ghcr.io/micromize-dev/micromize/gadgets/fs-restrict:latest
+    sudo ig run ghcr.io/micromize-dev/micromize/fs-restrict:latest
     ```
 provider:
     name: Micromize

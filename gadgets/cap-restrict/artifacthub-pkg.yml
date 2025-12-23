@@ -8,7 +8,7 @@ license: "Apache-2.0"
 homeURL: "https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict"
 containersImages:
     - name: gadget
-      image: "ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest"
+      image: "ghcr.io/micromize-dev/micromize/cap-restrict:latest"
       platforms:
         - linux/amd64
         - linux/arm64
@@ -21,7 +21,7 @@ links:
 install: |
     # Run
     ```bash
-    sudo ig run ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest
+    sudo ig run ghcr.io/micromize-dev/micromize/cap-restrict:latest
     ```
 provider:
     name: Micromize
