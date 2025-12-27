@@ -1,49 +1,49 @@
 name: cap-restrict
 description: Restrict privileged capabilities
-homepageURL: 'https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict'
-documentationURL: 'https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict'
-sourceURL: 'https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict'
+homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict
+documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict
+sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/cap-restrict
 datasources:
   cap_restrict:
     fields:
       cap:
         annotations:
-          description: 'The capability being checked'
+          description: The capability being checked
       flags:
         annotations:
-          description: 'Flags associated with the operation (e.g., unshare flags)'
+          description: Flags associated with the operation (e.g., unshare flags)
       process:
         annotations:
-          description: 'The process triggering the event'
+          description: The process triggering the event
       syscall:
         annotations:
-          description: 'The syscall triggering the capability check'
+          description: The syscall triggering the capability check
       timestamp_raw:
         annotations:
-          description: 'Timestamp of the event'
+          description: Timestamp of the event
 params:
   ebpf:
     enforce:
       key: enforce
       defaultValue: "true"
-      description: 'Enforce the restriction (block) or just audit'
+      description: Enforce the restriction (block) or just audit
     targ_comm:
       key: targ_comm
       defaultValue: ""
-      description: 'Process name (comm)'
+      description: Process name (comm)
     targ_gid:
       key: targ_gid
       defaultValue: ""
-      description: 'Group ID'
+      description: Group ID
     targ_pid:
       key: targ_pid
       defaultValue: ""
-      description: 'Process ID'
+      description: Process ID
     targ_tid:
       key: targ_tid
       defaultValue: ""
-      description: 'Thread ID'
+      description: Thread ID
     targ_uid:
       key: targ_uid
       defaultValue: ""
-      description: 'User ID'
+      description: User ID

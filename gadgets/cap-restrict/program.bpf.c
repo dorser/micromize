@@ -23,6 +23,24 @@ static __always_inline int check_unshare_flags(unsigned long flags) {
   return (flags & ns_flags);
 }
 
+SEC("tracepoint/syscalls/sys_enter_clone")
+int micromize_clone_enter(struct syscall_trace_enter *ctx) {
+  if (gadget_should_discard_data_current())
+    return 0;
+
+  unsigned long flags = ctx->args[0];
+  if (!check_unshare_flags(flags))
+    return 0;
+
+  u64 pid = bpf_get_current_pid_tgid();
+  struct cap_info info = {};
+  info.flags = flags;
+  info.syscall = SYSCALL_CLONE;
+  bpf_map_update_elem(&catch_at_cap, &pid, &info, BPF_ANY);
+
+  return 0;
+}
+
 SEC("tracepoint/syscalls/sys_enter_unshare")
 int ig_unshare_enter(struct syscall_trace_enter *ctx) {
   if (gadget_should_discard_data_current())
