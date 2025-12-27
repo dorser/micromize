@@ -42,7 +42,7 @@ int micromize_clone_enter(struct syscall_trace_enter *ctx) {
 }
 
 SEC("tracepoint/syscalls/sys_enter_unshare")
-int ig_unshare_enter(struct syscall_trace_enter *ctx) {
+int micromize_unshare_enter(struct syscall_trace_enter *ctx) {
   if (gadget_should_discard_data_current())
     return 0;
 
@@ -60,7 +60,7 @@ int ig_unshare_enter(struct syscall_trace_enter *ctx) {
 }
 
 SEC("tracepoint/syscalls/sys_enter_setns")
-int ig_setns_enter(struct syscall_trace_enter *ctx) {
+int micromize_setns_enter(struct syscall_trace_enter *ctx) {
   if (gadget_should_discard_data_current())
     return 0;
 
