@@ -4,7 +4,7 @@ IMAGE_TAG ?= $(TAG)
 CLANG_FORMAT ?= clang-format
 OUTPUT_DIR := dist
 GOARCHS := amd64 arm64
-LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.46.0 \
+LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.47.0 \
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
 GADGETS := fs-restrict cap-restrict ptrace-restrict 
