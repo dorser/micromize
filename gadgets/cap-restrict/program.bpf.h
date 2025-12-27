@@ -34,9 +34,11 @@
 #define CLONE_NEWNET 0x40000000
 
 #if defined(__TARGET_ARCH_x86)
+#define SYSCALL_CLONE 56
 #define SYSCALL_UNSHARE 272
 #define SYSCALL_SETNS 308
 #elif defined(__TARGET_ARCH_arm64)
+#define SYSCALL_CLONE 220
 #define SYSCALL_UNSHARE 97
 #define SYSCALL_SETNS 268
 #endif
