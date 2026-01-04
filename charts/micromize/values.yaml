@@ -1,0 +1,43 @@
+image:
+  repository: ghcr.io/micromize-dev/micromize
+  pullPolicy: IfNotPresent
+  # The image tag is required.
+  tag: ""
+
+logLevel: info
+
+enforce: true
+
+args: []
+
+# Priority class to ensure the pod is scheduled and not preempted
+priorityClassName: "system-node-critical"
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+resources:
+  limits:
+    cpu: 50m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - effect: NoExecute
+    operator: Exists
+
+serviceAccount:
+  create: true
+  name: "micromize"
+  annotations: {}
+
+podAnnotations: {}
+

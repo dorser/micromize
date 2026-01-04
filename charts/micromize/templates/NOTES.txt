@@ -1,0 +1,11 @@
+Micromize has been installed.
+
+To verify that the agents are running:
+
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+To check logs:
+
+  kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
+
+For more information, visit https://github.com/micromize-dev/micromize

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: micromize
+description: A Helm chart for Micromize - A security hardening tool for container runtimes
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: https://raw.githubusercontent.com/micromize-dev/micromize/main/docs/images/logo/logo.svg
