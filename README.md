@@ -33,12 +33,7 @@ docker pull ghcr.io/micromize-dev/micromize:latest
 docker run -it \
   --name micromize \
   --pid=host \
-  --cap-drop=ALL \
-  --cap-add=SYS_ADMIN \
-  --cap-add=SYSLOG \
-  --cap-add=SYS_PTRACE \
-  --cap-add=SYS_RESOURCE \
-  --cap-add=IPC_LOCK \
+  --privileged \
   -v /sys/fs/bpf:/sys/fs/bpf \
   -v /sys/kernel/debug:/sys/kernel/debug \
   -v /bin:/host/bin \
