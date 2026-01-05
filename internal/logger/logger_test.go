@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 )
 
 func TestSetup(t *testing.T) {
@@ -13,13 +15,14 @@ func TestSetup(t *testing.T) {
 		env         string
 		checkLevel  slog.Level
 		wantEnabled bool
+		wantLogrus  logrus.Level
 	}{
-		{"verbose true", true, "", slog.LevelDebug, true},
-		{"verbose false, no env", false, "", slog.LevelInfo, true},
-		{"verbose false, no env, debug check", false, "", slog.LevelDebug, false},
-		{"verbose false, env DEBUG", false, "DEBUG", slog.LevelDebug, true},
-		{"verbose false, env WARN", false, "WARN", slog.LevelInfo, false},
-		{"verbose false, env WARN check warn", false, "WARN", slog.LevelWarn, true},
+		{"verbose true", true, "", slog.LevelDebug, true, logrus.DebugLevel},
+		{"verbose false, no env", false, "", slog.LevelInfo, true, logrus.InfoLevel},
+		{"verbose false, no env, debug check", false, "", slog.LevelDebug, false, logrus.InfoLevel},
+		{"verbose false, env DEBUG", false, "DEBUG", slog.LevelDebug, true, logrus.DebugLevel},
+		{"verbose false, env WARN", false, "WARN", slog.LevelInfo, false, logrus.WarnLevel},
+		{"verbose false, env WARN check warn", false, "WARN", slog.LevelWarn, true, logrus.WarnLevel},
 	}
 
 	for _, tt := range tests {
@@ -34,6 +37,10 @@ func TestSetup(t *testing.T) {
 
 			if got := slog.Default().Enabled(context.Background(), tt.checkLevel); got != tt.wantEnabled {
 				t.Errorf("Enabled(%v) = %v, want %v", tt.checkLevel, got, tt.wantEnabled)
+			}
+
+			if got := logrus.GetLevel(); got != tt.wantLogrus {
+				t.Errorf("logrus.GetLevel() = %v, want %v", got, tt.wantLogrus)
 			}
 		})
 	}

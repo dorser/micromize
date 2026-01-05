@@ -9,6 +9,7 @@ import (
 	gadgetcontext "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-context"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	"github.com/quay/claircore/pkg/tarfs"
+	"github.com/sirupsen/logrus"
 	orasoci "oras.land/oras-go/v2/content/oci"
 )
 
@@ -45,6 +46,7 @@ func (cm *ContextManager) CreateContext(ctx context.Context, gadgetBytes []byte,
 		gadgetImage,
 		gadgetcontext.WithDataOperators(cm.operators...),
 		gadgetcontext.WithOrasReadonlyTarget(target),
+		gadgetcontext.WithLogger(logrus.StandardLogger()),
 	)
 
 	return gadgetCtx, nil
