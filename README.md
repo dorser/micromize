@@ -19,7 +19,47 @@ By deploying micromize to your nodes, you instantly harden the entire node. You 
 
 `micromize` leverages [BPF LSM](https://docs.ebpf.io/linux/program-type/BPF_PROG_TYPE_LSM/) to enforce policies at the kernel level. It is built on top of [Inspektor Gadget](https://github.com/inspektor-gadget/inspektor-gadget), using a modular architecture to load and execute eBPF programs.
 
-## Getting Started
+## Quickstart
+
+### Docker
+
+Run `micromize` as a Docker container:
+
+```bash
+# Pull the image
+docker pull ghcr.io/micromize-dev/micromize:latest
+
+# Run in enforce mode
+docker run -it \
+  --name micromize \
+  --pid=host \
+  --cap-drop=ALL \
+  --cap-add=SYS_ADMIN \
+  --cap-add=SYSLOG \
+  --cap-add=SYS_PTRACE \
+  --cap-add=SYS_RESOURCE \
+  --cap-add=IPC_LOCK \
+  -v /sys/fs/bpf:/sys/fs/bpf \
+  -v /sys/kernel/debug:/sys/kernel/debug \
+  -v /bin:/host/bin \
+  -v /proc:/host/proc \
+  -v /run:/host/run \
+  -v /usr:/host/usr \
+  ghcr.io/micromize-dev/micromize:latest
+```
+
+### Helm
+
+Deploy `micromize` to your Kubernetes cluster using Helm:
+
+```bash
+helm install micromize ./charts/micromize \
+  --namespace micromize \
+  --create-namespace \
+  --set image.tag=latest
+```
+
+## Development
 
 ### Prerequisites
 
@@ -30,8 +70,16 @@ We are using the [`ig`](https://inspektor-gadget.io/docs/latest/quick-start#linu
 
 ### Building
 
+To build the binary locally:
+
 ```bash
 make build-all
+```
+
+To build the Docker image:
+
+```bash
+docker buildx build --platform linux/amd64 -t micromize:latest . --load
 ```
 
 ### Running
