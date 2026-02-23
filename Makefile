@@ -61,3 +61,29 @@ push:
 .PHONY: clang-format
 clang-format:
 	$(CLANG_FORMAT) -i gadgets/*/*.bpf.c gadgets/*/*.bpf.h
+
+IG_VERSION ?= v0.49.1
+IG_ARCHIVE_SHA256 ?= 1cc186b4ebe476da9c89b6ff2f38234b13d4eae3d2a3b597b3647393c2a223c0
+SKIP_CHECKSUM ?= 0
+.PHONY: update-includes
+update-includes:
+	@set -e; \
+	rm -rf include/gadget; \
+	mkdir -p include/gadget; \
+	TMP_TAR=$$(mktemp); \
+	echo "Downloading inspektor-gadget@$(IG_VERSION)..."; \
+	curl -fsSL "https://github.com/inspektor-gadget/inspektor-gadget/archive/$(IG_VERSION).tar.gz" -o "$$TMP_TAR" || \
+		{ echo "Error: failed to download archive for $(IG_VERSION)" >&2; rm -f "$$TMP_TAR"; exit 1; }; \
+	if [ "$(SKIP_CHECKSUM)" = "0" ] && [ -n "$(IG_ARCHIVE_SHA256)" ]; then \
+		echo "$(IG_ARCHIVE_SHA256)  $$TMP_TAR" | sha256sum -c - || \
+			{ echo "Error: checksum verification failed" >&2; rm -f "$$TMP_TAR"; exit 1; }; \
+	else \
+		echo "Skipping checksum verification"; \
+	fi; \
+	tar -xzf "$$TMP_TAR" --strip-components=3 --wildcards -C include/gadget "*/include/gadget" || \
+		{ echo "Error: failed to extract archive" >&2; rm -f "$$TMP_TAR"; exit 1; }; \
+	rm -f "$$TMP_TAR"; \
+	if ! find include/gadget -type f | grep -q .; then \
+		echo "Error: include/gadget is empty after extraction" >&2; exit 1; \
+	fi; \
+	echo "Updated include/gadget from inspektor-gadget@$(IG_VERSION)"
