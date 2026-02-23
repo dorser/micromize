@@ -7,7 +7,15 @@ GOARCHS := amd64 arm64
 LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.47.0 \
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
-GADGETS := fs-restrict cap-restrict ptrace-restrict 
+GADGETS := fs-restrict cap-restrict ptrace-restrict
+CONFORM_VERSION ?= v0.1.0-alpha.30
+
+.PHONY: setup-hooks
+setup-hooks:
+	go install github.com/siderolabs/conform/cmd/conform@$(CONFORM_VERSION)
+	git config core.hooksPath .githooks
+	@echo "Git hooks installed. Commit messages must follow the conventional commit format to pass CI."
+
 .PHONY: build-all
 build-all: $(GADGETS) build-app
 
