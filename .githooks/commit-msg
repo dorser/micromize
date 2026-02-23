@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v conform &>/dev/null; then
+    echo "ERROR: 'conform' is not installed. Run 'make setup-hooks' to install it."
+    exit 1
+fi
+
+conform enforce --commit-msg-file "$1"
