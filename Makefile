@@ -16,6 +16,16 @@ setup-hooks:
 	git config core.hooksPath .githooks
 	@echo "Git hooks installed. Commit messages must follow the conventional commit format to pass CI."
 
+.PHONY: license-check
+license-check:
+	@go run github.com/google/addlicense@v1.2.0 -check -l apache -c "The micromize authors" \
+		$$(find . -name '*.go' -not -path './build/*')
+
+.PHONY: license-add
+license-add:
+	@go run github.com/google/addlicense@v1.2.0 -y "" -l apache -c "The micromize authors" \
+		$$(find . -name '*.go' -not -path './build/*')
+
 .PHONY: build-all
 build-all: $(GADGETS) build-app
 
