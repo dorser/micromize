@@ -103,13 +103,14 @@ func run(ctx context.Context) error {
 
 	ociHandlerOp := operators.NewOCIHandler()
 	cliOp := operators.NewCLIOperator()
+	imaOp := operators.NewImaOperator()
 
 	localManagerOp, err := operators.NewLocalManager()
 	if err != nil {
 		return fmt.Errorf("creating local manager operator: %w", err)
 	}
 
-	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, cliOp})
+	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, cliOp, imaOp})
 
 	// Create gadget registry
 	registry := gadget.NewRegistry(contextManager, runtimeManager)
