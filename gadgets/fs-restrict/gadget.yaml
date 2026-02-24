@@ -3,6 +3,8 @@ description: Restrict filesystem boundaries
 homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict
 documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict
 sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict
+annotations:
+  enable-containers-datasource: "true"
 datasources:
   fs_restrict:
     fields:
