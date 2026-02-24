@@ -15,9 +15,11 @@
 package operators
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math"
+	"time"
 
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/datasource"
 	igoperators "github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
@@ -27,6 +29,8 @@ import (
 	ocihandler "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/oci-handler"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators/simple"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/utils/host"
+
+	"github.com/micromize-dev/micromize/internal/sbom"
 )
 
 // DataOperator is an alias for igoperators.DataOperator to avoid direct dependency in main
@@ -60,10 +64,12 @@ func NewCLIOperator() igoperators.DataOperator {
 func NewImaOperator() igoperators.DataOperator {
 	slog.Debug("Creating IMA operator")
 	opPriority := math.MaxInt
+	sbomFetcher := sbom.NewFetcher()
 
 	operatorOptions := []simple.Option{
 		simple.WithPriority(opPriority),
 		simple.OnInit(func(gadgetCtx igoperators.GadgetContext) error {
+			ctx := gadgetCtx.Context()
 			containersDatasource := gadgetCtx.GetDataSources()["containers"]
 			if containersDatasource == nil {
 				slog.Debug("IMA Operator: containers datasource not available, skipping")
@@ -75,14 +81,20 @@ func NewImaOperator() igoperators.DataOperator {
 				return fmt.Errorf("containers datasource missing event_type field")
 			}
 
+			containerConfigField := containersDatasource.GetField("container_config")
+			if containerConfigField == nil {
+				return fmt.Errorf("containers datasource missing container_config field")
+			}
+
+			containerIDField := containersDatasource.GetField("container_id")
+
 			if err := containersDatasource.Subscribe(func(source datasource.DataSource, data datasource.Data) error {
 				eventType, err := eventTypeField.String(data)
 				if err != nil {
 					return fmt.Errorf("getting event_type value: %w", err)
 				}
-
 				if eventType == "CREATED" {
-					slog.Info("IMA Operator: Container created event received")
+					handleContainerCreated(ctx, sbomFetcher, containerConfigField, containerIDField, data)
 				}
 				return nil
 			}, opPriority); err != nil {
@@ -92,4 +104,48 @@ func NewImaOperator() igoperators.DataOperator {
 		}),
 	}
 	return simple.New("imaOperator", operatorOptions...)
+}
+
+func handleContainerCreated(ctx context.Context, fetcher *sbom.Fetcher, configField datasource.FieldAccessor, containerIDField datasource.FieldAccessor, data datasource.Data) {
+	ociConfig, err := configField.String(data)
+	if err != nil {
+		slog.Debug("Failed to read container_config field", "error", err)
+		return
+	}
+
+	imageRef, err := sbom.ImageRefFromOCIConfig(ociConfig)
+	if err != nil {
+		slog.Debug("Failed to parse OCI config", "error", err)
+		return
+	}
+
+	// Fallback: read image ref from Docker's config.v2.json when
+	// OCI annotations don't contain the image name (plain Docker).
+	if imageRef == "" && containerIDField != nil {
+		containerID, _ := containerIDField.String(data)
+		imageRef = sbom.ImageRefFromDockerConfig(containerID)
+	}
+
+	imageRef = sbom.NormalizeImageRef(imageRef)
+
+	fetchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	sbomData, err := fetcher.FetchForImage(fetchCtx, imageRef)
+	if err != nil {
+		slog.Error("Failed to fetch SBOM", "error", err)
+		return
+	}
+	if sbomData != nil {
+		slog.Info("SBOM fetched for container image", "image", imageRef, "size", len(sbomData))
+
+		files, err := sbom.ParseFiles(sbomData)
+		if err != nil {
+			slog.Error("Failed to parse SBOM files", "error", err)
+			return
+		}
+		for _, f := range files {
+			slog.Info("SBOM binary file", "image", imageRef, "file", f.FileName, "sha256", f.SHA256)
+		}
+	}
 }

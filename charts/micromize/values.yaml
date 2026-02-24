@@ -43,3 +43,10 @@ serviceAccount:
 
 podAnnotations: {}
 
+# Registry authentication for SBOM fetching from private registries.
+# Provide the name of an existing Kubernetes secret of type
+# kubernetes.io/dockerconfigjson. The secret will be mounted and used
+# to authenticate when pulling SBOMs from private registries.
+registryAuth:
+  existingSecret: ""
+
