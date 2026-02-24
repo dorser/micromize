@@ -63,6 +63,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- if .Values.registryAuth.existingSecret }}
+            - name: DOCKER_CONFIG
+              value: /etc/docker-registry
+            {{- end }}
           volumeMounts:
             # Required for pinning BPF maps.
             - mountPath: /sys/fs/bpf
@@ -86,6 +90,11 @@ spec:
             # Required for container level enrichment.
             - mountPath: /host/usr
               name: host-usr
+            {{- if .Values.registryAuth.existingSecret }}
+            - mountPath: /etc/docker-registry
+              name: registry-auth
+              readOnly: true
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -110,6 +119,14 @@ spec:
         - name: host-usr
           hostPath:
             path: /usr
+        {{- if .Values.registryAuth.existingSecret }}
+        - name: registry-auth
+          secret:
+            secretName: {{ .Values.registryAuth.existingSecret }}
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
