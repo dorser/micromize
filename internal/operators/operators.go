@@ -65,6 +65,10 @@ func NewImaOperator() igoperators.DataOperator {
 		simple.WithPriority(opPriority),
 		simple.OnInit(func(gadgetCtx igoperators.GadgetContext) error {
 			containersDatasource := gadgetCtx.GetDataSources()["containers"]
+			if containersDatasource == nil {
+				slog.Debug("IMA Operator: containers datasource not available, skipping")
+				return nil
+			}
 
 			eventTypeField := containersDatasource.GetField("event_type")
 			if eventTypeField == nil {
