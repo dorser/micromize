@@ -80,6 +80,53 @@ push:
 clang-format:
 	$(CLANG_FORMAT) -i gadgets/*/*.bpf.c gadgets/*/*.bpf.h
 
+# Dev deploy configuration
+DEV_REGISTRY ?=
+DEV_TAG ?= dev
+DEV_NAMESPACE ?= micromize
+DEV_HELM_ARGS ?=
+
+.PHONY: dev-build
+dev-build: ## Build Docker image for dev deployment
+ifeq ($(strip $(DEV_REGISTRY)),)
+	$(error DEV_REGISTRY is required. Set it via environment or argument: make dev-build DEV_REGISTRY=myacr.azurecr.io)
+endif
+	docker build --no-cache -t $(DEV_REGISTRY)/micromize:$(DEV_TAG) .
+
+.PHONY: dev-push
+dev-push: ## Push dev image to registry
+ifeq ($(strip $(DEV_REGISTRY)),)
+	$(error DEV_REGISTRY is required. Set it via environment or argument: make dev-push DEV_REGISTRY=myacr.azurecr.io)
+endif
+	docker push $(DEV_REGISTRY)/micromize:$(DEV_TAG)
+
+.PHONY: dev-deploy
+dev-deploy: ## Deploy to K8s cluster via Helm (assumes image already pushed)
+ifeq ($(strip $(DEV_REGISTRY)),)
+	$(error DEV_REGISTRY is required. Set it via environment or argument: make dev-deploy DEV_REGISTRY=myacr.azurecr.io)
+endif
+	helm upgrade --install micromize ./charts/micromize \
+		-n $(DEV_NAMESPACE) --create-namespace \
+		--set image.repository=$(DEV_REGISTRY)/micromize \
+		--set image.tag=$(DEV_TAG) \
+		--set image.pullPolicy=Always \
+		--set logLevel=debug \
+		--set filterNamespaces="default\,dev" \
+		$(DEV_HELM_ARGS)
+	kubectl rollout restart daemonset micromize -n $(DEV_NAMESPACE)
+	kubectl rollout status daemonset micromize -n $(DEV_NAMESPACE) --timeout=120s
+
+.PHONY: dev
+dev: dev-build dev-push dev-deploy ## Build, push, and deploy to dev cluster
+
+.PHONY: dev-logs
+dev-logs: ## Tail logs from all dev pods
+	kubectl logs -n $(DEV_NAMESPACE) -l app.kubernetes.io/name=micromize -f --prefix --all-containers
+
+.PHONY: dev-status
+dev-status: ## Show dev pod status
+	kubectl get pods -n $(DEV_NAMESPACE) -l app.kubernetes.io/name=micromize -o wide
+
 IG_VERSION ?= v0.49.1
 IG_ARCHIVE_SHA256 ?= 1cc186b4ebe476da9c89b6ff2f38234b13d4eae3d2a3b597b3647393c2a223c0
 SKIP_CHECKSUM ?= 0
