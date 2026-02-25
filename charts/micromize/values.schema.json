@@ -29,6 +29,10 @@
       "type": "boolean",
       "description": "Enable enforcement mode"
     },
+    "filterNamespaces": {
+      "type": "string",
+      "description": "Comma-separated list of Kubernetes namespaces to monitor (empty means all)"
+    },
     "args": {
       "type": "array",
       "items": {

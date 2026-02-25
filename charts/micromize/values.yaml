@@ -8,6 +8,8 @@ logLevel: info
 
 enforce: true
 
+filterNamespaces: ""
+
 args: []
 
 # Priority class to ensure the pod is scheduled and not preempted
