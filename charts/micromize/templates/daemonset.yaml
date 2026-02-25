@@ -14,10 +14,12 @@ spec:
   {{- end }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        # Required for accessing securityfs and BPF subsystem on systems with AppArmor
+        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: "unconfined"
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
       labels:
         {{- include "micromize.selectorLabels" . | nindent 8 }}
     spec:
