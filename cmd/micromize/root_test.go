@@ -30,17 +30,17 @@ func TestBuildNamespaceFilter(t *testing.T) {
 		{
 			name:             "single namespace appends micromize exclusion",
 			filterNamespaces: "default",
-			want:             "default,!micromize",
+			want:             "!micromize,default",
 		},
 		{
 			name:             "multiple namespaces append micromize exclusion",
 			filterNamespaces: "default,kube-system",
-			want:             "default,kube-system,!micromize",
+			want:             "!micromize,default,kube-system",
 		},
 		{
 			name:             "user already excludes micromize",
 			filterNamespaces: "default,!micromize",
-			want:             "default,!micromize",
+			want:             "!micromize,default",
 		},
 		{
 			name:             "only micromize exclusion",
@@ -50,7 +50,7 @@ func TestBuildNamespaceFilter(t *testing.T) {
 		{
 			name:             "exclusion filter appends micromize exclusion",
 			filterNamespaces: "!kube-system",
-			want:             "!kube-system,!micromize",
+			want:             "!micromize,!kube-system",
 		},
 	}
 
