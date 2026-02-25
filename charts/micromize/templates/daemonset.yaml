@@ -48,6 +48,9 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --enforce={{ .Values.enforce }}
+            {{- if .Values.filterNamespaces }}
+            - --filter-namespaces={{ .Values.filterNamespaces }}
+            {{- end }}
             {{- with .Values.args }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

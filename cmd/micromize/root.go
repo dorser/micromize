@@ -21,6 +21,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/micromize-dev/micromize/internal/gadget"
@@ -38,8 +39,9 @@ const (
 )
 
 var (
-	enforce bool
-	verbose bool
+	enforce          bool
+	verbose          bool
+	filterNamespaces string
 )
 
 var rootCmd = &cobra.Command{
@@ -65,6 +67,7 @@ func init() {
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().BoolVar(&enforce, "enforce", true, "Enforce restrictions")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all). Supports exclusion with '!' prefix.")
 }
 
 func run(ctx context.Context) error {
@@ -120,12 +123,15 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("getting host pid namespace ID: %w", err)
 	}
 
+	nsFilter := buildNamespaceFilter(filterNamespaces)
+	slog.Info("Namespace filter", "filter", nsFilter)
+
 	commonParams := map[string]string{
 		"operator.cli.output":       "json",
 		"operator.oci.ebpf.enforce": fmt.Sprintf("%d", utils.BoolToInt(enforce)),
-		// TOOO: We filter out micromize. At this point, we use the container name for demo purposes until https://github.com/inspektor-gadget/inspektor-gadget/pull/5166 is merged and released.
+		// TODO: We filter out micromize. At this point, we use the container name for demo purposes until https://github.com/inspektor-gadget/inspektor-gadget/pull/5166 is merged and released.
 		"operator.LocalManager.containername": "!micromize",
-		"operator.LocalManager.k8s-namespace": "!micromize",
+		"operator.LocalManager.k8s-namespace": nsFilter,
 	}
 
 	registry.Register("fs-restrict", &gadget.GadgetConfig{
@@ -161,4 +167,26 @@ func run(ctx context.Context) error {
 	// Wait for context to be done (which happens on signal)
 	<-ctx.Done()
 	return nil
+}
+
+// buildNamespaceFilter constructs the k8s-namespace filter value.
+// It always excludes the "micromize" namespace and appends any user-specified
+// namespace filters. When filterNamespaces is empty, only "!micromize" is used.
+func buildNamespaceFilter(filterNamespaces string) string {
+	const excludeMicromize = "!micromize"
+	normalizedFilter := excludeMicromize
+
+	if filterNamespaces == "" {
+		return normalizedFilter
+	}
+
+	parts := strings.Split(filterNamespaces, ",")
+	for _, p := range parts {
+		nsPart := strings.TrimSpace(p)
+		if nsPart != excludeMicromize {
+			normalizedFilter += "," + nsPart
+		}
+	}
+
+	return normalizedFilter
 }
