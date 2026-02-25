@@ -87,6 +87,9 @@ func NewImaOperator() igoperators.DataOperator {
 			}
 
 			containerIDField := containersDatasource.GetField("container_id")
+			if containerIDField == nil {
+				slog.Debug("containers datasource missing container_id field, Docker config fallback will be unavailable")
+			}
 
 			if err := containersDatasource.Subscribe(func(source datasource.DataSource, data datasource.Data) error {
 				eventType, err := eventTypeField.String(data)
