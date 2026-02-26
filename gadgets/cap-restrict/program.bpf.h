@@ -2,6 +2,7 @@
 /* Copyright (c) 2024 micromize-Authors */
 
 #include <gadget/common.h>
+#include <micromize/event_types.h>
 
 // This is a workaround to make the IDE happy.
 // The __TARGET_ARCH_* macros are defined at build time.
@@ -51,6 +52,7 @@ struct cap_info {
 struct event {
   gadget_timestamp timestamp_raw;
   struct gadget_process process;
+  __u32 event_type;
   int cap;
   unsigned long flags;
   int syscall;

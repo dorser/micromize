@@ -9,12 +9,18 @@ datasources:
       cap:
         annotations:
           description: The capability being checked
+      event_type:
+        annotations:
+          description: Numeric event type identifier
       flags:
         annotations:
           description: Flags associated with the operation (e.g., unshare flags)
       process:
         annotations:
           description: The process triggering the event
+      reason:
+        annotations:
+          description: Human-readable reason for the event
       syscall:
         annotations:
           description: The syscall triggering the capability check

@@ -3,6 +3,7 @@
 
 #include <gadget/common.h>
 #include <gadget/filesystem.h>
+#include <micromize/event_types.h>
 
 #ifndef EPERM
 #define EPERM 1
@@ -19,5 +20,6 @@
 struct event {
   gadget_timestamp timestamp_raw;
   struct gadget_process process;
+  __u32 event_type;
   char filename[GADGET_PATH_MAX];
 };

@@ -6,9 +6,15 @@ sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/ptrace-r
 datasources:
   ptrace_restrict:
     fields:
+      event_type:
+        annotations:
+          description: Numeric event type identifier
       process:
         annotations:
           description: The process attempting to use ptrace
+      reason:
+        annotations:
+          description: Human-readable reason for the event
       timestamp_raw:
         annotations:
           description: Timestamp of the event

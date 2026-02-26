@@ -10,6 +10,7 @@ RUN wget -qO- https://github.com/inspektor-gadget/inspektor-gadget/releases/down
     | tar -xz -C /usr/local/bin ig
 
 WORKDIR /app
+COPY include/micromize /usr/include/micromize
 COPY gadgets gadgets
 
 # Build gadgets

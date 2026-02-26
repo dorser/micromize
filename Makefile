@@ -40,7 +40,7 @@ build-gadgets: $(GADGETS)
 build-app: test $(GOARCHS)
 
 $(GADGETS):
-	sudo -E ig image build \
+	sudo -E IG_SOURCE_PATH=$(CURDIR) ig image build \
 		-t $(CONTAINER_REPO)/$@:$(IMAGE_TAG) \
 		--update-metadata gadgets/$@
 	

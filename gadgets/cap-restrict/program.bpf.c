@@ -121,6 +121,8 @@ int BPF_PROG(micromize_capable, const struct cred *cred,
   gadget_process_populate(&event->process);
   event->timestamp_raw = bpf_ktime_get_boot_ns();
   event->cap = cap;
+  event->event_type = (cap == CAP_SYS_MODULE) ? EVENT_TYPE_CAP_MODULE_LOAD
+                                              : EVENT_TYPE_CAP_NAMESPACE_CREATION;
 
   gadget_submit_buf(ctx, &events, event, sizeof(*event));
 
