@@ -87,7 +87,7 @@ func (f *Fetcher) FetchForImage(ctx context.Context, imageRef string) ([]byte, e
 			return nil, nil
 		}
 
-		slog.Info("Fetched SPDX SBOM for image", "image", imageRef, "size", len(sbomBytes))
+		slog.Debug("Fetched SPDX SBOM for image", "image", imageRef, "size", len(sbomBytes))
 		f.cache.Store(imageRef, &result{HasSBOM: true, SBOM: sbomBytes})
 		return sbomBytes, nil
 	})

@@ -148,7 +148,7 @@ func handleContainerCreated(ctx context.Context, gadgetCtx igoperators.GadgetCon
 		return
 	}
 	if sbomData != nil {
-		slog.Info("SBOM fetched for container image", "image", imageRef, "size", len(sbomData))
+		slog.Debug("SBOM fetched for container image", "image", imageRef, "size", len(sbomData))
 
 		files, err := sbom.ParseFiles(sbomData)
 		if err != nil {
@@ -156,7 +156,7 @@ func handleContainerCreated(ctx context.Context, gadgetCtx igoperators.GadgetCon
 			return
 		}
 		for _, f := range files {
-			slog.Info("SBOM binary file", "image", imageRef, "file", f.FileName, "sha256", f.SHA256)
+			slog.Debug("SBOM binary file", "image", imageRef, "file", f.FileName, "sha256", f.SHA256)
 		}
 
 		if mntnsIDField != nil && len(files) > 0 {
@@ -251,7 +251,7 @@ func populateExpectedHashes(gadgetCtx igoperators.GadgetContext, innerMaps *sync
 	// Track the inner map for cleanup on container removal
 	innerMaps.Store(mntnsID, innerMap)
 
-	slog.Info("Populated expected_hashes map", "mntns_id", mntnsID, "entries", len(files))
+	slog.Debug("Populated expected_hashes map", "mntns_id", mntnsID, "entries", len(files))
 }
 
 func handleContainerRemoved(gadgetCtx igoperators.GadgetContext, innerMaps *sync.Map, mntnsIDField datasource.FieldAccessor, data datasource.Data) {
