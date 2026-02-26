@@ -26,8 +26,8 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/datasource"
-	igoperators "github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	api "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api"
+	igoperators "github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	clioperator "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/cli"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/ebpf"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators/localmanager"
@@ -168,7 +168,7 @@ func handleContainerCreated(ctx context.Context, gadgetCtx igoperators.GadgetCon
 // Keep in sync with gadgets/binary-attestation/program.bpf.h
 const (
 	expectedHashesMapName = "map/expected_hashes"
-	maxAllowedFileHashes    = 512
+	maxAllowedFileHashes  = 512
 	sha256HashSize        = 32
 	maxFilepathLen        = 64
 )
@@ -290,27 +290,31 @@ func handleContainerRemoved(gadgetCtx igoperators.GadgetContext, innerMaps *sync
 
 // Event type constants matching include/micromize/event_types.h
 const (
-	eventTypeUnknown            = 0
-	eventTypeFSProcfsAccess     = 1
-	eventTypeFSExecOutsideRoot  = 2
-	eventTypeCapNamespaceCreate = 3
-	eventTypeCapModuleLoad      = 4
-	eventTypePtraceAccess       = 5
-	eventTypePtraceTraceme      = 6
-	eventTypeUnattestedBinary   = 7
-	eventTypeHashMismatch       = 8
+	eventTypeUnknown                  = 0
+	eventTypeFSProcfsAccess           = 1
+	eventTypeFSExecOutsideRoot        = 2
+	eventTypeCapNamespaceCreate       = 3
+	eventTypeCapModuleLoad            = 4
+	eventTypePtraceAccess             = 5
+	eventTypePtraceTraceme            = 6
+	eventTypeUnattestedBinary         = 7
+	eventTypeHashMismatch             = 8
+	eventTypeUnattestedSharedObject   = 9
+	eventTypeSharedObjectHashMismatch = 10
 )
 
 var eventTypeNames = map[uint32]string{
-	eventTypeUnknown:            "unknown",
-	eventTypeFSProcfsAccess:     "procfs_access",
-	eventTypeFSExecOutsideRoot:  "exec_outside_rootfs",
-	eventTypeCapNamespaceCreate: "namespace_creation",
-	eventTypeCapModuleLoad:      "module_load",
-	eventTypePtraceAccess:       "ptrace_access",
-	eventTypePtraceTraceme:      "ptrace_traceme",
-	eventTypeUnattestedBinary:   "unattested_binary",
-	eventTypeHashMismatch:       "hash_mismatch",
+	eventTypeUnknown:                  "unknown",
+	eventTypeFSProcfsAccess:           "procfs_access",
+	eventTypeFSExecOutsideRoot:        "exec_outside_rootfs",
+	eventTypeCapNamespaceCreate:       "namespace_creation",
+	eventTypeCapModuleLoad:            "module_load",
+	eventTypePtraceAccess:             "ptrace_access",
+	eventTypePtraceTraceme:            "ptrace_traceme",
+	eventTypeUnattestedBinary:         "unattested_binary",
+	eventTypeHashMismatch:             "hash_mismatch",
+	eventTypeUnattestedSharedObject:   "unattested_shared_object",
+	eventTypeSharedObjectHashMismatch: "shared_object_hash_mismatch",
 }
 
 // NewEventTypeOperator creates an operator that enriches events with a

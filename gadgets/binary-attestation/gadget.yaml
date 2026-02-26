@@ -1,5 +1,5 @@
 name: binary-attestation
-description: Attest binary integrity using IMA file hashes
+description: Attest binary and shared object integrity using IMA file hashes
 homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
 documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
 sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
@@ -13,7 +13,7 @@ datasources:
           description: Numeric event type identifier
       filename:
         annotations:
-          description: The file path of the binary being executed
+          description: The file path of the binary or shared object being checked
       process:
         annotations:
           description: The process triggering the event
