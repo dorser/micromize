@@ -15,7 +15,7 @@ COPY gadgets gadgets
 
 # Build gadgets
 RUN mkdir -p build/gadgets && \
-    for gadget in fs-restrict cap-restrict ptrace-restrict; do \
+    for gadget in fs-restrict cap-restrict ptrace-restrict binary-attestation; do \
         echo "Building gadget: $gadget" && \
         ig image build \
             --local \

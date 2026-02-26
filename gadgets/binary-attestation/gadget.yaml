@@ -1,0 +1,51 @@
+name: binary-attestation
+description: Attest binary integrity using IMA file hashes
+homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
+documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
+sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
+annotations:
+  enable-containers-datasource: "true"
+datasources:
+  binary_attestation:
+    fields:
+      event_type:
+        annotations:
+          description: Numeric event type identifier
+      filename:
+        annotations:
+          description: The file path of the binary being executed
+      process:
+        annotations:
+          description: The process triggering the event
+      reason:
+        annotations:
+          description: Human-readable reason for the event
+      timestamp_raw:
+        annotations:
+          description: Timestamp of the event
+params:
+  ebpf:
+    enforce:
+      key: enforce
+      defaultValue: "true"
+      description: Enforce the restriction (block) or just audit
+    targ_comm:
+      key: targ_comm
+      defaultValue: ""
+      description: Process name (comm)
+    targ_gid:
+      key: targ_gid
+      defaultValue: ""
+      description: Group ID
+    targ_pid:
+      key: targ_pid
+      defaultValue: ""
+      description: Process ID
+    targ_tid:
+      key: targ_tid
+      defaultValue: ""
+      description: Thread ID
+    targ_uid:
+      key: targ_uid
+      defaultValue: ""
+      description: User ID
