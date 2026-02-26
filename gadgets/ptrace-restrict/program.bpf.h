@@ -2,6 +2,7 @@
 /* Copyright (c) 2024 micromize-Authors */
 
 #include <gadget/common.h>
+#include <micromize/event_types.h>
 
 #ifndef EPERM
 #define EPERM 1
@@ -10,4 +11,5 @@
 struct event {
   gadget_timestamp timestamp_raw;
   struct gadget_process process;
+  __u32 event_type;
 };

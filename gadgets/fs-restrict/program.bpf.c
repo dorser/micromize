@@ -122,6 +122,7 @@ int BPF_PROG(micromize_file_open, struct file *file) {
 
       gadget_process_populate(&event->process);
       event->timestamp_raw = bpf_ktime_get_boot_ns();
+      event->event_type = EVENT_TYPE_FS_PROCFS_ACCESS;
 
       struct path f_path = BPF_CORE_READ(file, f_path);
       char *path_str = get_path_str(&f_path);
@@ -161,6 +162,7 @@ int BPF_PROG(micromize_bprm_creds_for_exec, struct linux_binprm *bprm) {
 
     gadget_process_populate(&event->process);
     event->timestamp_raw = bpf_ktime_get_boot_ns();
+    event->event_type = EVENT_TYPE_FS_EXEC_OUTSIDE_ROOTFS;
 
     struct path f_path = BPF_CORE_READ(file, f_path);
     char *path_str = get_path_str(&f_path);

@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/datasource"
+	api "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api"
 	igoperators "github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
 	clioperator "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/cli"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/ebpf"
@@ -87,6 +88,9 @@ func NewImaOperator() igoperators.DataOperator {
 			}
 
 			containerIDField := containersDatasource.GetField("container_id")
+			if containerIDField == nil {
+				slog.Debug("containers datasource missing container_id field, Docker config fallback will be unavailable")
+			}
 
 			if err := containersDatasource.Subscribe(func(source datasource.DataSource, data datasource.Data) error {
 				eventType, err := eventTypeField.String(data)
@@ -148,4 +152,69 @@ func handleContainerCreated(ctx context.Context, fetcher *sbom.Fetcher, configFi
 			slog.Info("SBOM binary file", "image", imageRef, "file", f.FileName, "sha256", f.SHA256)
 		}
 	}
+}
+
+// Event type constants matching include/micromize/event_types.h
+const (
+	eventTypeUnknown            = 0
+	eventTypeFSProcfsAccess     = 1
+	eventTypeFSExecOutsideRoot  = 2
+	eventTypeCapNamespaceCreate = 3
+	eventTypeCapModuleLoad      = 4
+	eventTypePtraceAccess       = 5
+	eventTypePtraceTraceme      = 6
+
+var eventTypeNames = map[uint32]string{
+	eventTypeUnknown:            "unknown",
+	eventTypeFSProcfsAccess:     "procfs_access",
+	eventTypeFSExecOutsideRoot:  "exec_outside_rootfs",
+	eventTypeCapNamespaceCreate: "namespace_creation",
+	eventTypeCapModuleLoad:      "module_load",
+	eventTypePtraceAccess:       "ptrace_access",
+	eventTypePtraceTraceme:      "ptrace_traceme",
+}
+
+// NewEventTypeOperator creates an operator that enriches events with a
+// human-readable "reason" field derived from the numeric event_type.
+func NewEventTypeOperator() igoperators.DataOperator {
+	slog.Debug("Creating event type operator")
+	return simple.New("eventTypeOperator",
+		simple.OnInit(func(gadgetCtx igoperators.GadgetContext) error {
+			for _, ds := range gadgetCtx.GetDataSources() {
+				eventTypeField := ds.GetField("event_type")
+				if eventTypeField == nil {
+					continue
+				}
+
+				reasonField, err := ds.AddField("reason", api.Kind_String)
+				if err != nil {
+					return fmt.Errorf("adding reason field to %s: %w", ds.Name(), err)
+				}
+
+				dsName := ds.Name()
+				etField := eventTypeField
+				rField := reasonField
+
+				if err := ds.Subscribe(func(source datasource.DataSource, data datasource.Data) error {
+					val, err := etField.Uint32(data)
+					if err != nil {
+						return nil
+					}
+					name, ok := eventTypeNames[val]
+					if !ok {
+						name = "unknown"
+					}
+					if err := rField.PutString(data, name); err != nil {
+						slog.Debug("Failed to set reason field", "datasource", dsName, "error", err)
+					}
+					return nil
+				}, 0); err != nil {
+					return fmt.Errorf("subscribing to %s for event type enrichment: %w", dsName, err)
+				}
+
+				slog.Debug("Event type enrichment registered", "datasource", dsName)
+			}
+			return nil
+		}),
+	)
 }

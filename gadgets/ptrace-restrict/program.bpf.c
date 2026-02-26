@@ -29,6 +29,7 @@ int BPF_PROG(micromize_ptrace_access_check, struct task_struct *child,
 
   gadget_process_populate(&event->process);
   event->timestamp_raw = bpf_ktime_get_boot_ns();
+  event->event_type = EVENT_TYPE_PTRACE_ACCESS;
 
   gadget_submit_buf(ctx, &events, event, sizeof(*event));
 
@@ -50,6 +51,7 @@ int BPF_PROG(micromize_ptrace_traceme, struct task_struct *parent) {
 
   gadget_process_populate(&event->process);
   event->timestamp_raw = bpf_ktime_get_boot_ns();
+  event->event_type = EVENT_TYPE_PTRACE_TRACEME;
 
   gadget_submit_buf(ctx, &events, event, sizeof(*event));
 

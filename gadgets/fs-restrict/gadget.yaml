@@ -3,17 +3,21 @@ description: Restrict filesystem boundaries
 homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict
 documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict
 sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/fs-restrict
-annotations:
-  enable-containers-datasource: "true"
 datasources:
   fs_restrict:
     fields:
+      event_type:
+        annotations:
+          description: Numeric event type identifier
       filename:
         annotations:
           description: The file path being accessed or executed
       process:
         annotations:
           description: The process triggering the event
+      reason:
+        annotations:
+          description: Human-readable reason for the event
       timestamp_raw:
         annotations:
           description: Timestamp of the event
