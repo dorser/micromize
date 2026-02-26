@@ -40,22 +40,15 @@ struct {
       });
 } expected_hashes SEC(".maps");
 
-SEC("lsm.s/bprm_check_security")
-int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
-  if (gadget_should_discard_data_current())
-    return 0;
-
-  struct file *file = bprm->file;
+static __always_inline int
+attest_file(void *ctx, struct file *file, __u32 unattested_event_type,
+            __u32 mismatch_event_type) {
   gadget_mntns_id mntns_id = gadget_get_current_mntns_id();
 
   // Look up the inner map for this mount namespace
   void *inner = bpf_map_lookup_elem(&expected_hashes, &mntns_id);
   if (!inner)
     return 0;
-
-  bpf_printk(
-      "binary-attestation: bprm_check_security called for mntns_id=%llu\n",
-      mntns_id);
 
   // Get the file path
   struct filepath_key fkey = {};
@@ -64,15 +57,12 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
   if (!path_str)
     return 0;
 
-  bpf_printk("binary-attestation: Got path %s for file in mntns_id=%llu\n",
-             path_str, mntns_id);
   bpf_probe_read_kernel_str(fkey.path, sizeof(fkey.path), path_str);
 
   // Look up the expected hash for this file path
   struct sha256_hash *expected = bpf_map_lookup_elem(inner, &fkey);
   if (!expected) {
-    // Binary not in attestation map — block unattested binaries
-    bpf_printk("binary-attestation: Unattested binary %s in mntns_id=%llu\n",
+    bpf_printk("binary-attestation: Unattested file %s in mntns_id=%llu\n",
                fkey.path, mntns_id);
 
     struct event *event;
@@ -82,7 +72,7 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
 
     gadget_process_populate(&event->process);
     event->timestamp_raw = bpf_ktime_get_boot_ns();
-    event->event_type = EVENT_TYPE_UNATTESTED_BINARY;
+    event->event_type = unattested_event_type;
     bpf_probe_read_kernel_str(event->filename, sizeof(event->filename),
                               path_str);
 
@@ -98,7 +88,7 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
       "binary-attestation: Found expected hash for file %s in mntns_id=%llu\n",
       fkey.path, mntns_id);
 
-  // Calculate the IMA hash of the file being executed
+  // Calculate the IMA hash of the file
   struct sha256_hash computed = {};
   long ret = bpf_ima_file_hash(file, computed.hash, SHA256_HASH_SIZE);
   bpf_printk("binary-attestation: bpf_ima_file_hash returned %ld for %s\n", ret,
@@ -107,7 +97,7 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
     // IMA did not return a SHA256 hash (e.g., disabled or misconfigured).
     // Logging so operators can detect that attestation was skipped.
     bpf_printk("binary-attestation: IMA hash algorithm (%ld) is not SHA256; "
-               "skipping binary attestation for %s in mntns_id=%llu\n",
+               "skipping attestation for %s in mntns_id=%llu\n",
                ret, fkey.path, mntns_id);
     return 0;
   }
@@ -119,7 +109,10 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
   int i;
   for (i = 0; i < SHA256_HASH_SIZE; i++) {
     if (computed.hash[i] != expected->hash[i]) {
-      // Hash mismatch — emit event
+      bpf_printk(
+          "binary-attestation: Hash mismatch for %s in mntns_id=%llu\n",
+          fkey.path, mntns_id);
+
       struct event *event;
       event = gadget_reserve_buf(&events, sizeof(*event));
       if (!event)
@@ -127,7 +120,7 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
 
       gadget_process_populate(&event->process);
       event->timestamp_raw = bpf_ktime_get_boot_ns();
-      event->event_type = EVENT_TYPE_HASH_MISMATCH;
+      event->event_type = mismatch_event_type;
       bpf_probe_read_kernel_str(event->filename, sizeof(event->filename),
                                 path_str);
 
@@ -141,6 +134,31 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
   }
 
   return 0;
+}
+
+SEC("lsm.s/bprm_check_security")
+int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
+  if (gadget_should_discard_data_current())
+    return 0;
+
+  return attest_file(ctx, bprm->file, EVENT_TYPE_UNATTESTED_BINARY,
+                     EVENT_TYPE_HASH_MISMATCH);
+}
+
+SEC("lsm.s/mmap_file")
+int BPF_PROG(micromize_mmap_file, struct file *file, unsigned long reqprot,
+             unsigned long prot, unsigned long flags) {
+  if (!file)
+    return 0;
+
+  if (!(prot & PROT_EXEC))
+    return 0;
+
+  if (gadget_should_discard_data_current())
+    return 0;
+
+  return attest_file(ctx, file, EVENT_TYPE_UNATTESTED_SHARED_OBJECT,
+                     EVENT_TYPE_SHARED_OBJECT_HASH_MISMATCH);
 }
 
 char LICENSE[] SEC("license") = "GPL";
