@@ -7,7 +7,7 @@ GOARCHS := amd64 arm64
 LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.47.0 \
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
-GADGETS := fs-restrict cap-restrict ptrace-restrict
+GADGETS := fs-restrict cap-restrict ptrace-restrict binary-attestation
 CONFORM_VERSION ?= v0.1.0-alpha.30
 
 .PHONY: setup-hooks

@@ -28,3 +28,6 @@ var capRestrictGadgetBytes []byte
 
 //go:embed build/ptrace-restrict.tar
 var ptraceRestrictGadgetBytes []byte
+
+//go:embed build/binary-attestation.tar
+var binaryAttestationGadgetBytes []byte

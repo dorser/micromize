@@ -33,9 +33,10 @@ import (
 )
 
 const (
-	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/fs-restrict"
-	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/cap-restrict"
-	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
+	fsRestrictGadgetImageRepo        = "ghcr.io/micromize-dev/micromize/fs-restrict"
+	capRestrictGadgetImageRepo       = "ghcr.io/micromize-dev/micromize/cap-restrict"
+	ptraceRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
+	binaryAttestationGadgetImageRepo = "ghcr.io/micromize-dev/micromize/binary-attestation"
 )
 
 var (
@@ -157,6 +158,12 @@ func run(ctx context.Context) error {
 	registry.Register("ptrace-restrict", &gadget.GadgetConfig{
 		Bytes:     ptraceRestrictGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", ptraceRestrictGadgetImageRepo, Version),
+		Params:    commonParams,
+	})
+
+	registry.Register("binary-attestation", &gadget.GadgetConfig{
+		Bytes:     binaryAttestationGadgetBytes,
+		ImageName: fmt.Sprintf("%s:%s", binaryAttestationGadgetImageRepo, Version),
 		Params:    commonParams,
 	})
 

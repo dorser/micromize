@@ -16,14 +16,18 @@ package operators
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"math"
+	"strings"
+	"sync"
 	"time"
 
+	"github.com/cilium/ebpf"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/datasource"
-	api "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api"
 	igoperators "github.com/inspektor-gadget/inspektor-gadget/pkg/operators"
+	api "github.com/inspektor-gadget/inspektor-gadget/pkg/gadget-service/api"
 	clioperator "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/cli"
 	_ "github.com/inspektor-gadget/inspektor-gadget/pkg/operators/ebpf"
 	"github.com/inspektor-gadget/inspektor-gadget/pkg/operators/localmanager"
@@ -66,6 +70,7 @@ func NewImaOperator() igoperators.DataOperator {
 	slog.Debug("Creating IMA operator")
 	opPriority := math.MaxInt
 	sbomFetcher := sbom.NewFetcher()
+	innerMaps := &sync.Map{} // mntns_id -> *ebpf.Map (for cleanup)
 
 	operatorOptions := []simple.Option{
 		simple.WithPriority(opPriority),
@@ -88,17 +93,19 @@ func NewImaOperator() igoperators.DataOperator {
 			}
 
 			containerIDField := containersDatasource.GetField("container_id")
-			if containerIDField == nil {
-				slog.Debug("containers datasource missing container_id field, Docker config fallback will be unavailable")
-			}
+
+			mntnsIDField := containersDatasource.GetField("mntns_id")
 
 			if err := containersDatasource.Subscribe(func(source datasource.DataSource, data datasource.Data) error {
 				eventType, err := eventTypeField.String(data)
 				if err != nil {
 					return fmt.Errorf("getting event_type value: %w", err)
 				}
-				if eventType == "CREATED" {
-					handleContainerCreated(ctx, sbomFetcher, containerConfigField, containerIDField, data)
+				switch eventType {
+				case "CREATED":
+					handleContainerCreated(ctx, gadgetCtx, sbomFetcher, innerMaps, containerConfigField, containerIDField, mntnsIDField, data)
+				case "REMOVED":
+					handleContainerRemoved(gadgetCtx, innerMaps, mntnsIDField, data)
 				}
 				return nil
 			}, opPriority); err != nil {
@@ -110,7 +117,7 @@ func NewImaOperator() igoperators.DataOperator {
 	return simple.New("imaOperator", operatorOptions...)
 }
 
-func handleContainerCreated(ctx context.Context, fetcher *sbom.Fetcher, configField datasource.FieldAccessor, containerIDField datasource.FieldAccessor, data datasource.Data) {
+func handleContainerCreated(ctx context.Context, gadgetCtx igoperators.GadgetContext, fetcher *sbom.Fetcher, innerMaps *sync.Map, configField datasource.FieldAccessor, containerIDField datasource.FieldAccessor, mntnsIDField datasource.FieldAccessor, data datasource.Data) {
 	ociConfig, err := configField.String(data)
 	if err != nil {
 		slog.Debug("Failed to read container_config field", "error", err)
@@ -151,7 +158,134 @@ func handleContainerCreated(ctx context.Context, fetcher *sbom.Fetcher, configFi
 		for _, f := range files {
 			slog.Info("SBOM binary file", "image", imageRef, "file", f.FileName, "sha256", f.SHA256)
 		}
+
+		if mntnsIDField != nil && len(files) > 0 {
+			populateExpectedHashes(gadgetCtx, innerMaps, mntnsIDField, data, files)
+		}
 	}
+}
+
+// Keep in sync with gadgets/binary-attestation/program.bpf.h
+const (
+	expectedHashesMapName = "map/expected_hashes"
+	maxAllowedFileHashes    = 512
+	sha256HashSize        = 32
+	maxFilepathLen        = 64
+)
+
+func populateExpectedHashes(gadgetCtx igoperators.GadgetContext, innerMaps *sync.Map, mntnsIDField datasource.FieldAccessor, data datasource.Data, files []sbom.FileInfo) {
+	outerMapVar, ok := gadgetCtx.GetVar(expectedHashesMapName)
+	if !ok {
+		slog.Debug("expected_hashes map not available in gadget context, skipping map population")
+		return
+	}
+
+	outerMap, ok := outerMapVar.(*ebpf.Map)
+	if !ok || outerMap == nil {
+		slog.Debug("expected_hashes map is not a valid *ebpf.Map, skipping")
+		return
+	}
+
+	mntnsID, err := mntnsIDField.Uint64(data)
+	if err != nil {
+		slog.Error("Failed to read mntns_id field", "error", err)
+		return
+	}
+
+	// Create a new inner map for this mount namespace
+	innerMapSpec := &ebpf.MapSpec{
+		Type:       ebpf.Hash,
+		KeySize:    uint32(maxFilepathLen),
+		ValueSize:  uint32(sha256HashSize),
+		MaxEntries: maxAllowedFileHashes,
+	}
+
+	innerMap, err := ebpf.NewMap(innerMapSpec)
+	if err != nil {
+		slog.Error("Failed to create inner BPF map", "error", err)
+		return
+	}
+
+	// Populate the inner map with file hashes from the SBOM
+	for _, f := range files {
+		var key [maxFilepathLen]byte
+
+		if len(f.FileName) > maxFilepathLen {
+			slog.Error("SBOM file path exceeds maximum length", "file", f.FileName, "length", len(f.FileName))
+			continue
+		}
+		// Normalize SBOM filename to match kernel dentry path format.
+		// SPDX filenames use "./" prefix (e.g. "./hello"), while the kernel
+		// returns absolute paths from the mount root (e.g. "/hello").
+		name := f.FileName
+		name = strings.TrimPrefix(name, ".")
+		if !strings.HasPrefix(name, "/") {
+			name = "/" + name
+		}
+		copy(key[:], name)
+
+		var value [sha256HashSize]byte
+		decoded, err := hex.DecodeString(f.SHA256)
+		if err != nil {
+			slog.Error("Failed to decode SHA256 hash", "file", f.FileName, "error", err)
+			continue
+		}
+		if len(decoded) != sha256HashSize {
+			slog.Error("Invalid SHA256 hash length", "file", f.FileName, "length", len(decoded))
+			continue
+		}
+		copy(value[:], decoded)
+
+		if err := innerMap.Put(key, value); err != nil {
+			slog.Error("Failed to insert entry into inner BPF map", "file", f.FileName, "error", err)
+		}
+	}
+
+	// Insert the inner map into the outer map keyed by mntns_id
+	if err := outerMap.Put(mntnsID, uint32(innerMap.FD())); err != nil {
+		slog.Error("Failed to insert inner map into expected_hashes", "mntns_id", mntnsID, "error", err)
+		innerMap.Close()
+		return
+	}
+
+	// Track the inner map for cleanup on container removal
+	innerMaps.Store(mntnsID, innerMap)
+
+	slog.Info("Populated expected_hashes map", "mntns_id", mntnsID, "entries", len(files))
+}
+
+func handleContainerRemoved(gadgetCtx igoperators.GadgetContext, innerMaps *sync.Map, mntnsIDField datasource.FieldAccessor, data datasource.Data) {
+	if mntnsIDField == nil {
+		slog.Debug("mntns_id field not available, cannot clean up expected_hashes for removed container")
+		return
+	}
+
+	mntnsID, err := mntnsIDField.Uint64(data)
+	if err != nil {
+		slog.Debug("Failed to read mntns_id on container removal", "error", err)
+		return
+	}
+
+	outerMapVar, ok := gadgetCtx.GetVar(expectedHashesMapName)
+	if !ok {
+		return
+	}
+	outerMap, ok := outerMapVar.(*ebpf.Map)
+	if !ok || outerMap == nil {
+		return
+	}
+
+	if err := outerMap.Delete(mntnsID); err != nil {
+		slog.Debug("Failed to delete entry from expected_hashes", "mntns_id", mntnsID, "error", err)
+	}
+
+	if val, loaded := innerMaps.LoadAndDelete(mntnsID); loaded {
+		if m, ok := val.(*ebpf.Map); ok && m != nil {
+			m.Close()
+		}
+	}
+
+	slog.Info("Cleaned up expected_hashes for removed container", "mntns_id", mntnsID)
 }
 
 // Event type constants matching include/micromize/event_types.h
@@ -163,6 +297,9 @@ const (
 	eventTypeCapModuleLoad      = 4
 	eventTypePtraceAccess       = 5
 	eventTypePtraceTraceme      = 6
+	eventTypeUnattestedBinary   = 7
+	eventTypeHashMismatch       = 8
+)
 
 var eventTypeNames = map[uint32]string{
 	eventTypeUnknown:            "unknown",
@@ -172,6 +309,8 @@ var eventTypeNames = map[uint32]string{
 	eventTypeCapModuleLoad:      "module_load",
 	eventTypePtraceAccess:       "ptrace_access",
 	eventTypePtraceTraceme:      "ptrace_traceme",
+	eventTypeUnattestedBinary:   "unattested_binary",
+	eventTypeHashMismatch:       "hash_mismatch",
 }
 
 // NewEventTypeOperator creates an operator that enriches events with a

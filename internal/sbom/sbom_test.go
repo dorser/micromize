@@ -237,3 +237,54 @@ func TestExtractSPDXFromDSSE(t *testing.T) {
 		})
 	}
 }
+
+func TestParseFiles_RejectsRelativePaths(t *testing.T) {
+	makeSBOM := func(files []map[string]any) []byte {
+		doc := map[string]any{"files": files}
+		b, _ := json.Marshal(doc)
+		return b
+	}
+
+	entry := func(name string) map[string]any {
+		return map[string]any{
+			"fileName":  name,
+			"fileTypes": []string{"BINARY"},
+			"checksums": []map[string]string{
+				{"algorithm": "SHA256", "checksumValue": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+			},
+		}
+	}
+
+	tests := []struct {
+		name      string
+		fileName  string
+		wantIncl  bool
+	}{
+		{"absolute path", "/usr/bin/hello", true},
+		{"SPDX dotslash", "./usr/bin/hello", true},
+		{"relative traversal", "../../etc/shadow", false},
+		{"dot-dot in middle", "./usr/../../etc/passwd", false},
+		{"bare relative", "bin/hello", false},
+		{"just dotdot", "..", false},
+		{"dotdot slash", "../", false},
+		{"empty filename", "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sbomData := makeSBOM([]map[string]any{entry(tt.fileName)})
+			files, err := ParseFiles(sbomData)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			found := false
+			for _, f := range files {
+				if f.FileName == tt.fileName {
+					found = true
+				}
+			}
+			if found != tt.wantIncl {
+				t.Errorf("ParseFiles included=%v, want included=%v for fileName=%q", found, tt.wantIncl, tt.fileName)
+			}
+		})
+	}
+}

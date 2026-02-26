@@ -3,6 +3,7 @@
 
 # Allow directories and files needed for build
 !gadgets/
+!include/micromize/
 !cmd/
 !internal/
 !go.mod

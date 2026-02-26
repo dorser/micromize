@@ -227,7 +227,11 @@ func ParseFiles(sbomData []byte) ([]FileInfo, error) {
 
 	var files []FileInfo
 	for _, f := range doc.Files {
-		if !isBinary(f.FileTypes) {
+		if !isBinary(f.FileTypes) && !isScript(f.FileName) {
+			continue
+		}
+		if !isAbsolutePath(f.FileName) {
+			slog.Warn("Skipping SBOM file with relative path", "file", f.FileName)
 			continue
 		}
 		for _, c := range f.Checksums {
@@ -243,9 +247,52 @@ func ParseFiles(sbomData []byte) ([]FileInfo, error) {
 	return files, nil
 }
 
+// isAbsolutePath checks that the SBOM filename is a valid absolute path
+// (optionally with "./" SPDX prefix) and does not contain ".." traversal
+// components.
+func isAbsolutePath(name string) bool {
+	if name == "" {
+		return false
+	}
+
+	// SPDX filenames conventionally use "./" prefix; strip it for validation.
+	cleaned := filepath.Clean(strings.TrimPrefix(name, "."))
+
+	// After cleaning, the path must be absolute (start with "/").
+	if !filepath.IsAbs(cleaned) {
+		return false
+	}
+
+	// Reject any remaining ".." components (Clean resolves most, but
+	// e.g. "/../foo" → "/foo" is fine—check the original intent).
+	for _, part := range strings.Split(name, "/") {
+		if part == ".." {
+			return false
+		}
+	}
+
+	return true
+}
+
 func isBinary(fileTypes []string) bool {
 	for _, ft := range fileTypes {
 		if ft == "BINARY" {
+			return true
+		}
+	}
+	return false
+}
+
+// isScript is a simple heuristic that considers files under /bin or /lib paths as possibly scripts, since they may be interpreted (e.g., Python, shell) even if not marked as such in the SBOM (Usually marked as "TEXT").
+func isScript(name string) bool {
+	return isUnderBinOrLib(name)
+}
+
+func isUnderBinOrLib(name string) bool {
+	cleaned := filepath.Clean(name)
+	parts := strings.Split(cleaned, string(filepath.Separator))
+	for _, p := range parts {
+		if p == "bin" || p == "lib" || p == "lib64" || p == "sbin" {
 			return true
 		}
 	}
