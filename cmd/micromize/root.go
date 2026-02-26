@@ -106,16 +106,16 @@ func run(ctx context.Context) error {
 	defer runtimeManager.Close()
 
 	ociHandlerOp := operators.NewOCIHandler()
-	cliOp := operators.NewCLIOperator()
 	imaOp := operators.NewImaOperator()
 	eventTypeOp := operators.NewEventTypeOperator()
+	outputOp := operators.NewOutputOperator()
 
 	localManagerOp, err := operators.NewLocalManager()
 	if err != nil {
 		return fmt.Errorf("creating local manager operator: %w", err)
 	}
 
-	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, cliOp, imaOp, eventTypeOp})
+	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, imaOp, eventTypeOp, outputOp})
 
 	// Create gadget registry
 	registry := gadget.NewRegistry(contextManager, runtimeManager)
@@ -129,7 +129,6 @@ func run(ctx context.Context) error {
 	slog.Info("Namespace filter", "filter", nsFilter)
 
 	commonParams := map[string]string{
-		"operator.cli.output":       "json",
 		"operator.oci.ebpf.enforce": fmt.Sprintf("%d", utils.BoolToInt(enforce)),
 		// TODO: We filter out micromize. At this point, we use the container name for demo purposes until https://github.com/inspektor-gadget/inspektor-gadget/pull/5166 is merged and released.
 		"operator.LocalManager.containername": "!micromize",
