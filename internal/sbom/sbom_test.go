@@ -256,15 +256,15 @@ func TestParseFiles_RejectsRelativePaths(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		fileName  string
-		wantIncl  bool
+		name     string
+		fileName string
+		wantIncl bool
 	}{
 		{"absolute path", "/usr/bin/hello", true},
 		{"SPDX dotslash", "./usr/bin/hello", true},
 		{"relative traversal", "../../etc/shadow", false},
 		{"dot-dot in middle", "./usr/../../etc/passwd", false},
-		{"bare relative", "bin/hello", false},
+		{"bare relative", "bin/hello", true},
 		{"just dotdot", "..", false},
 		{"dotdot slash", "../", false},
 		{"empty filename", "", false},

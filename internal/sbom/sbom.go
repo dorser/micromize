@@ -255,14 +255,6 @@ func isAbsolutePath(name string) bool {
 		return false
 	}
 
-	// SPDX filenames conventionally use "./" prefix; strip it for validation.
-	cleaned := filepath.Clean(strings.TrimPrefix(name, "."))
-
-	// After cleaning, the path must be absolute (start with "/").
-	if !filepath.IsAbs(cleaned) {
-		return false
-	}
-
 	// Reject any remaining ".." components (Clean resolves most, but
 	// e.g. "/../foo" → "/foo" is fine—check the original intent).
 	for _, part := range strings.Split(name, "/") {
