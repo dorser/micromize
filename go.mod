@@ -6,7 +6,6 @@ require (
 	github.com/cilium/ebpf v0.20.0
 	github.com/cyphar/filepath-securejoin v0.5.1
 	github.com/docker/cli v29.2.0+incompatible
-	github.com/go-jose/go-jose/v4 v4.1.3
 	github.com/inspektor-gadget/inspektor-gadget v0.49.1
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/quay/claircore v1.5.45
