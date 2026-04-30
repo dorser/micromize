@@ -14,6 +14,7 @@ enum micromize_event_type {
   // cap-restrict
   EVENT_TYPE_CAP_NAMESPACE_CREATION = 3,
   EVENT_TYPE_CAP_MODULE_LOAD = 4,
+  EVENT_TYPE_CAP_MODULE_AUTOLOAD = 13,
 
   // ptrace-restrict
   EVENT_TYPE_PTRACE_ACCESS = 5,

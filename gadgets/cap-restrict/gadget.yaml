@@ -15,6 +15,9 @@ datasources:
       flags:
         annotations:
           description: Flags associated with the operation (e.g., unshare flags)
+      module_name:
+        annotations:
+          description: Name of the kernel module requested for auto-loading
       process:
         annotations:
           description: The process triggering the event

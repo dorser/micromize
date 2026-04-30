@@ -124,6 +124,36 @@ int BPF_PROG(micromize_capable, const struct cred *cred,
   event->event_type = (cap == CAP_SYS_MODULE)
                           ? EVENT_TYPE_CAP_MODULE_LOAD
                           : EVENT_TYPE_CAP_NAMESPACE_CREATION;
+  event->module_name[0] = '\0';
+
+  gadget_submit_buf(ctx, &events, event, sizeof(*event));
+
+  if (enforce)
+    return -EPERM;
+
+  return 0;
+}
+
+SEC("lsm/kernel_module_request")
+int BPF_PROG(micromize_kernel_module_request, char *kmod_name) {
+  if (gadget_should_discard_data_current())
+    return 0;
+
+  struct event *event;
+  event = gadget_reserve_buf(&events, sizeof(*event));
+  if (!event) {
+    if (enforce)
+      return -EPERM;
+    return 0;
+  }
+
+  gadget_process_populate(&event->process);
+  event->timestamp_raw = bpf_ktime_get_boot_ns();
+  event->event_type = EVENT_TYPE_CAP_MODULE_AUTOLOAD;
+  event->cap = 0;
+  event->flags = 0;
+  event->syscall = 0;
+  bpf_probe_read_kernel_str(event->module_name, MODULE_NAME_LEN, kmod_name);
 
   gadget_submit_buf(ctx, &events, event, sizeof(*event));
 
