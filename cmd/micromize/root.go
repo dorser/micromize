@@ -37,6 +37,7 @@ const (
 	fsRestrictGadgetImageRepo        = "ghcr.io/micromize-dev/micromize/fs-restrict"
 	capRestrictGadgetImageRepo       = "ghcr.io/micromize-dev/micromize/cap-restrict"
 	ptraceRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
+	socketRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/socket-restrict"
 	binaryAttestationGadgetImageRepo = "ghcr.io/micromize-dev/micromize/binary-attestation"
 )
 
@@ -158,6 +159,12 @@ func run(ctx context.Context) error {
 	registry.Register("ptrace-restrict", &gadget.GadgetConfig{
 		Bytes:     ptraceRestrictGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", ptraceRestrictGadgetImageRepo, Version),
+		Params:    commonParams,
+	})
+
+	registry.Register("socket-restrict", &gadget.GadgetConfig{
+		Bytes:     socketRestrictGadgetBytes,
+		ImageName: fmt.Sprintf("%s:%s", socketRestrictGadgetImageRepo, Version),
 		Params:    commonParams,
 	})
 

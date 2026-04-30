@@ -1,0 +1,55 @@
+name: socket-restrict
+description: Restrict dangerous socket primitives in containers
+homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/socket-restrict
+documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/socket-restrict
+sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/socket-restrict
+datasources:
+  socket_restrict:
+    fields:
+      alg_name:
+        annotations:
+          description: The AF_ALG algorithm name requested by the process
+      alg_type:
+        annotations:
+          description: The AF_ALG algorithm type requested by the process
+      event_type:
+        annotations:
+          description: Numeric event type identifier
+      family:
+        annotations:
+          description: Socket address family
+      process:
+        annotations:
+          description: The process attempting a restricted socket operation
+      reason:
+        annotations:
+          description: Human-readable reason for the event
+      timestamp_raw:
+        annotations:
+          description: Timestamp of the event
+params:
+  ebpf:
+    enforce:
+      key: enforce
+      defaultValue: "true"
+      description: Enforce the restriction (block) or just audit
+    targ_comm:
+      key: targ_comm
+      defaultValue: ""
+      description: Process name (comm)
+    targ_gid:
+      key: targ_gid
+      defaultValue: ""
+      description: Group ID
+    targ_pid:
+      key: targ_pid
+      defaultValue: ""
+      description: Process ID
+    targ_tid:
+      key: targ_tid
+      defaultValue: ""
+      description: Thread ID
+    targ_uid:
+      key: targ_uid
+      defaultValue: ""
+      description: User ID

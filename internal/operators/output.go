@@ -39,6 +39,8 @@ var eventDescriptions = map[uint32]string{
 	eventTypeHashMismatch:             "Binary hash mismatch detected",
 	eventTypeUnattestedSharedObject:   "Unattested shared object loaded",
 	eventTypeSharedObjectHashMismatch: "Shared object hash mismatch detected",
+	eventTypeSocketAFAlgCreate:        "AF_ALG socket creation blocked",
+	eventTypeSocketAFAlgBind:          "AF_ALG socket bind blocked",
 }
 
 var eventEmojis = map[uint32]string{}
@@ -73,6 +75,10 @@ type eventFields struct {
 	// Cap-restrict specific
 	cap     datasource.FieldAccessor
 	syscall datasource.FieldAccessor
+
+	// socket-restrict specific
+	algType datasource.FieldAccessor
+	algName datasource.FieldAccessor
 }
 
 var (
@@ -173,6 +179,8 @@ func collectEventFields(ds datasource.DataSource, etField datasource.FieldAccess
 
 	f.cap = ds.GetField("cap")
 	f.syscall = ds.GetField("syscall")
+	f.algType = ds.GetField("alg_type")
+	f.algName = ds.GetField("alg_name")
 
 	return f
 }
@@ -204,6 +212,12 @@ func formatAndPrintEvent(f *eventFields, data datasource.Data) {
 
 	if filename := fieldStr(f.filename, data); filename != "" {
 		fmt.Fprintf(&sb, ". Filename: %s", filename)
+	}
+	if algType := fieldStr(f.algType, data); algType != "" {
+		fmt.Fprintf(&sb, ". AF_ALG type: %s", algType)
+		if algName := fieldStr(f.algName, data); algName != "" {
+			fmt.Fprintf(&sb, ". Algorithm: %s", algName)
+		}
 	}
 
 	// Show image name only for Docker (non-k8s) environments
