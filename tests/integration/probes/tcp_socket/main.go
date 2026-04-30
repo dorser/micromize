@@ -12,12 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !release
-
 package main
 
-var fsRestrictGadgetBytes []byte
-var capRestrictGadgetBytes []byte
-var ptraceRestrictGadgetBytes []byte
-var socketRestrictGadgetBytes []byte
-var binaryAttestationGadgetBytes []byte
+import (
+	"fmt"
+	"os"
+	"syscall"
+)
+
+func main() {
+	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, 0)
+	if err != nil {
+		fmt.Printf("blocked: TCP socket creation failed: %v\n", err)
+		os.Exit(1)
+	}
+	syscall.Close(fd) //nolint:errcheck,gosec
+
+	fd, err = syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
+	if err != nil {
+		fmt.Printf("blocked: UDP socket creation failed: %v\n", err)
+		os.Exit(1)
+	}
+	syscall.Close(fd) //nolint:errcheck,gosec
+
+	fmt.Println("ok: TCP and UDP sockets work normally")
+}

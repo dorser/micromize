@@ -32,6 +32,7 @@ Today, Micromize attaches eBPF programs to LSM hooks and enforces:
 - **Strict container boundaries** — blocks filesystem escapes and host access
 - **Capability restriction** — prevents privilege escalation via `unshare`/`clone`/`setns`
 - **Ptrace blocking** — eliminates ptrace-based debugging/injection attacks
+- **Socket restriction** — blocks `AF_ALG` (kernel crypto userspace API) socket usage in containers, mitigating CVE-2026-31431 and related attack surface
 - **Execution integrity** — SBOM + runtime hash validation via `bpf_ima_file_hash`
 
 Policies are loaded before container start and enforced at execution time. No runtime replacement. No learning mode. Kernel-native enforcement.
