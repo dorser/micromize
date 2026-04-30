@@ -12,6 +12,8 @@ logLevel: info
 
 enforce: true
 
+disableGadgets: ""
+
 filterNamespaces: ""
 
 args: []

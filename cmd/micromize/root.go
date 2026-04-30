@@ -46,6 +46,7 @@ var (
 	verbose           bool
 	filterNamespaces  string
 	filterImageDigest string
+	disableGadgets    string
 )
 
 var rootCmd = &cobra.Command{
@@ -73,6 +74,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all except 'micromize'). Supports exclusion with '!' prefix.")
 	rootCmd.PersistentFlags().StringVar(&filterImageDigest, "filter-image-digest", "", "Filter out containers running this image digest from monitoring (e.g. sha256:abc123...)")
+	rootCmd.PersistentFlags().StringVar(&disableGadgets, "disable-gadgets", "", "Comma-separated list of gadgets to disable (e.g. socket-restrict,binary-attestation)")
 }
 
 func run(ctx context.Context) error {
@@ -143,7 +145,7 @@ func run(ctx context.Context) error {
 		slog.Info("Filtering out containers by image digest", "digest", digest)
 	}
 
-	registry.Register("fs-restrict", &gadget.GadgetConfig{
+	registerGadget(registry, "fs-restrict", &gadget.GadgetConfig{
 		Bytes:     fsRestrictGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", fsRestrictGadgetImageRepo, Version),
 		Params:    commonParams,
@@ -156,25 +158,25 @@ func run(ctx context.Context) error {
 		capRestrictParams[k] = v
 	}
 
-	registry.Register("cap-restrict", &gadget.GadgetConfig{
+	registerGadget(registry, "cap-restrict", &gadget.GadgetConfig{
 		Bytes:     capRestrictGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", capRestrictGadgetImageRepo, Version),
 		Params:    capRestrictParams,
 	})
 
-	registry.Register("ptrace-restrict", &gadget.GadgetConfig{
+	registerGadget(registry, "ptrace-restrict", &gadget.GadgetConfig{
 		Bytes:     ptraceRestrictGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", ptraceRestrictGadgetImageRepo, Version),
 		Params:    commonParams,
 	})
 
-	registry.Register("socket-restrict", &gadget.GadgetConfig{
+	registerGadget(registry, "socket-restrict", &gadget.GadgetConfig{
 		Bytes:     socketRestrictGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", socketRestrictGadgetImageRepo, Version),
 		Params:    commonParams,
 	})
 
-	registry.Register("binary-attestation", &gadget.GadgetConfig{
+	registerGadget(registry, "binary-attestation", &gadget.GadgetConfig{
 		Bytes:     binaryAttestationGadgetBytes,
 		ImageName: fmt.Sprintf("%s:%s", binaryAttestationGadgetImageRepo, Version),
 		Params:    commonParams,
@@ -210,4 +212,24 @@ func buildNamespaceFilter(filterNamespaces string) string {
 	}
 
 	return normalizedFilter
+}
+
+func isGadgetDisabled(name string) bool {
+	if disableGadgets == "" {
+		return false
+	}
+	for _, g := range strings.Split(disableGadgets, ",") {
+		if strings.TrimSpace(g) == name {
+			return true
+		}
+	}
+	return false
+}
+
+func registerGadget(registry *gadget.Registry, name string, config *gadget.GadgetConfig) {
+	if isGadgetDisabled(name) {
+		slog.Info("Gadget disabled, skipping", "gadget", name)
+		return
+	}
+	registry.Register(name, config)
 }

@@ -33,6 +33,10 @@
       "type": "boolean",
       "description": "Enable enforcement mode"
     },
+    "disableGadgets": {
+      "type": "string",
+      "description": "Comma-separated list of gadgets to disable (e.g. socket-restrict,binary-attestation)"
+    },
     "filterNamespaces": {
       "type": "string",
       "description": "Comma-separated list of Kubernetes namespaces to monitor (empty means all)"

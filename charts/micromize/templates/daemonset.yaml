@@ -56,6 +56,9 @@ spec:
             {{- if .Values.image.digest }}
             - --filter-image-digest={{ .Values.image.digest }}
             {{- end }}
+            {{- if .Values.disableGadgets }}
+            - --disable-gadgets={{ .Values.disableGadgets }}
+            {{- end }}
             {{- with .Values.args }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

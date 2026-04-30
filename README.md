@@ -77,6 +77,7 @@ helm install micromize ./charts/micromize \
 | `--verbose` / `-v` | `false` | Debug logging |
 | `--filter-namespaces` | `""` | Comma-separated K8s namespaces to monitor (`!` prefix to exclude) |
 | `--filter-image-digest` | `""` | Filter out containers running this image digest from monitoring |
+| `--disable-gadgets` | `""` | Comma-separated list of gadgets to disable |
 
 ## Requirements
 
