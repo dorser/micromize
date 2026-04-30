@@ -17,6 +17,10 @@
         "tag": {
           "type": "string",
           "description": "Image tag"
+        },
+        "digest": {
+          "type": "string",
+          "description": "Image digest for self-exclusion filtering (e.g. sha256:abc123...)"
         }
       },
       "required": ["repository", "pullPolicy"]

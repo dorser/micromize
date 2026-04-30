@@ -53,6 +53,9 @@ spec:
             {{- if .Values.filterNamespaces }}
             - --filter-namespaces={{ .Values.filterNamespaces }}
             {{- end }}
+            {{- if .Values.image.digest }}
+            - --filter-image-digest={{ .Values.image.digest }}
+            {{- end }}
             {{- with .Values.args }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

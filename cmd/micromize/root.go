@@ -42,9 +42,10 @@ const (
 )
 
 var (
-	enforce          bool
-	verbose          bool
-	filterNamespaces string
+	enforce           bool
+	verbose           bool
+	filterNamespaces  string
+	filterImageDigest string
 )
 
 var rootCmd = &cobra.Command{
@@ -70,7 +71,8 @@ func init() {
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().BoolVar(&enforce, "enforce", true, "Enforce restrictions")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
-	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all). Supports exclusion with '!' prefix.")
+	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all except 'micromize'). Supports exclusion with '!' prefix.")
+	rootCmd.PersistentFlags().StringVar(&filterImageDigest, "filter-image-digest", "", "Filter out containers running this image digest from monitoring (e.g. sha256:abc123...)")
 }
 
 func run(ctx context.Context) error {
@@ -131,10 +133,14 @@ func run(ctx context.Context) error {
 	slog.Info("Namespace filter", "filter", nsFilter)
 
 	commonParams := map[string]string{
-		"operator.oci.ebpf.enforce": fmt.Sprintf("%d", utils.BoolToInt(enforce)),
-		// TODO: We filter out micromize. At this point, we use the container name for demo purposes until https://github.com/inspektor-gadget/inspektor-gadget/pull/5166 is merged and released.
-		"operator.LocalManager.containername": "!micromize",
+		"operator.oci.ebpf.enforce":           fmt.Sprintf("%d", utils.BoolToInt(enforce)),
 		"operator.LocalManager.k8s-namespace": nsFilter,
+	}
+
+	if filterImageDigest != "" {
+		digest := strings.TrimPrefix(filterImageDigest, "!")
+		commonParams["operator.LocalManager.runtime-containerimage-digest"] = "!" + digest
+		slog.Info("Filtering out containers by image digest", "digest", digest)
 	}
 
 	registry.Register("fs-restrict", &gadget.GadgetConfig{

@@ -3,6 +3,10 @@ image:
   pullPolicy: IfNotPresent
   # The image tag is required.
   tag: ""
+  # Image digest for self-exclusion filtering. When set, micromize filters out
+  # containers running this digest from monitoring. Resolve with:
+  #   crane digest ghcr.io/micromize-dev/micromize:<tag>
+  digest: ""
 
 logLevel: info
 

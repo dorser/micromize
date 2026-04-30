@@ -59,9 +59,14 @@ docker run -it \
 ### Kubernetes (Helm)
 
 ```bash
+# Resolve the micromize image digest for self-exclusion filtering
+DIGEST=$(crane digest ghcr.io/micromize-dev/micromize:<tag>)
+
 helm install micromize ./charts/micromize \
   --namespace micromize \
-  --create-namespace
+  --create-namespace \
+  --set image.tag=<tag> \
+  --set image.digest=$DIGEST
 ```
 
 ### CLI Flags
@@ -71,6 +76,7 @@ helm install micromize ./charts/micromize \
 | `--enforce` | `true` | Enforce restrictions (block) vs audit mode |
 | `--verbose` / `-v` | `false` | Debug logging |
 | `--filter-namespaces` | `""` | Comma-separated K8s namespaces to monitor (`!` prefix to exclude) |
+| `--filter-image-digest` | `""` | Filter out containers running this image digest from monitoring |
 
 ## Requirements
 
