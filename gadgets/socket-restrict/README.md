@@ -2,6 +2,8 @@
 
 Restrict dangerous socket primitives in containers.
 
+![Demo](../../docs/images/socket-restrict-demo.gif)
+
 This gadget blocks all `AF_ALG` (kernel crypto userspace API) socket usage
 inside containers. `AF_ALG` is rarely needed in containerized production
 workloads — most TLS, SSH, and dm-crypt use cases never touch it — and
