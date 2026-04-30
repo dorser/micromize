@@ -44,6 +44,8 @@
 #define SYSCALL_SETNS 268
 #endif
 
+#define MODULE_NAME_LEN 64
+
 struct cap_info {
   unsigned long flags;
   int syscall;
@@ -56,6 +58,7 @@ struct event {
   int cap;
   unsigned long flags;
   int syscall;
+  char module_name[MODULE_NAME_LEN];
 };
 
 struct {

@@ -41,6 +41,7 @@ var eventDescriptions = map[uint32]string{
 	eventTypeSharedObjectHashMismatch: "Shared object hash mismatch detected",
 	eventTypeSocketAFAlgCreate:        "AF_ALG socket creation blocked",
 	eventTypeSocketAFAlgBind:          "AF_ALG socket bind blocked",
+	eventTypeCapModuleAutoload:        "Kernel module auto-load blocked",
 }
 
 var eventEmojis = map[uint32]string{}
@@ -79,6 +80,9 @@ type eventFields struct {
 	// socket-restrict specific
 	algType datasource.FieldAccessor
 	algName datasource.FieldAccessor
+
+	// cap-restrict module autoload
+	moduleName datasource.FieldAccessor
 }
 
 var (
@@ -181,6 +185,7 @@ func collectEventFields(ds datasource.DataSource, etField datasource.FieldAccess
 	f.syscall = ds.GetField("syscall")
 	f.algType = ds.GetField("alg_type")
 	f.algName = ds.GetField("alg_name")
+	f.moduleName = ds.GetField("module_name")
 
 	return f
 }
@@ -218,6 +223,9 @@ func formatAndPrintEvent(f *eventFields, data datasource.Data) {
 		if algName := fieldStr(f.algName, data); algName != "" {
 			fmt.Fprintf(&sb, ". Algorithm: %s", algName)
 		}
+	}
+	if modName := fieldStr(f.moduleName, data); modName != "" {
+		fmt.Fprintf(&sb, ". Module: %s", modName)
 	}
 
 	// Show image name only for Docker (non-k8s) environments

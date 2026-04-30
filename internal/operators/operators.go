@@ -309,6 +309,7 @@ const (
 	eventTypeSharedObjectHashMismatch = 10
 	eventTypeSocketAFAlgCreate        = 11
 	eventTypeSocketAFAlgBind          = 12
+	eventTypeCapModuleAutoload        = 13
 )
 
 var eventTypeNames = map[uint32]string{
@@ -325,6 +326,7 @@ var eventTypeNames = map[uint32]string{
 	eventTypeSharedObjectHashMismatch: "shared_object_hash_mismatch",
 	eventTypeSocketAFAlgCreate:        "af_alg_socket_create",
 	eventTypeSocketAFAlgBind:          "af_alg_socket_bind",
+	eventTypeCapModuleAutoload:        "module_autoload",
 }
 
 // NewEventTypeOperator creates an operator that enriches events with a
