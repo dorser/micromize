@@ -16,6 +16,55 @@ package main
 
 import "testing"
 
+func TestBuildDisabledSet(t *testing.T) {
+	tests := []struct {
+		name           string
+		disableGadgets string
+		wantDisabled   []string
+		wantEnabled    []string
+	}{
+		{
+			name:           "empty string disables nothing",
+			disableGadgets: "",
+			wantEnabled:    []string{"ptrace-restrict", "fs-restrict"},
+		},
+		{
+			name:           "single gadget disabled",
+			disableGadgets: "ptrace-restrict",
+			wantDisabled:   []string{"ptrace-restrict"},
+			wantEnabled:    []string{"fs-restrict", "cap-restrict"},
+		},
+		{
+			name:           "multiple gadgets disabled",
+			disableGadgets: "ptrace-restrict,cap-restrict",
+			wantDisabled:   []string{"ptrace-restrict", "cap-restrict"},
+			wantEnabled:    []string{"fs-restrict"},
+		},
+		{
+			name:           "whitespace around names is trimmed",
+			disableGadgets: " ptrace-restrict , cap-restrict ",
+			wantDisabled:   []string{"ptrace-restrict", "cap-restrict"},
+			wantEnabled:    []string{"fs-restrict"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildDisabledSet(tt.disableGadgets)
+			for _, g := range tt.wantDisabled {
+				if !got[g] {
+					t.Errorf("buildDisabledSet(%q): expected %q to be disabled", tt.disableGadgets, g)
+				}
+			}
+			for _, g := range tt.wantEnabled {
+				if got[g] {
+					t.Errorf("buildDisabledSet(%q): expected %q to be enabled", tt.disableGadgets, g)
+				}
+			}
+		})
+	}
+}
+
 func TestBuildNamespaceFilter(t *testing.T) {
 	tests := []struct {
 		name             string

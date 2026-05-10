@@ -42,10 +42,11 @@ const (
 )
 
 var (
-	enforce           bool
-	verbose           bool
+	enforce          bool
+	verbose          bool
 	filterNamespaces  string
 	filterImageDigest string
+	disableGadgets    string
 )
 
 var rootCmd = &cobra.Command{
@@ -73,6 +74,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all except 'micromize'). Supports exclusion with '!' prefix.")
 	rootCmd.PersistentFlags().StringVar(&filterImageDigest, "filter-image-digest", "", "Filter out containers running this image digest from monitoring (e.g. sha256:abc123...)")
+	rootCmd.PersistentFlags().StringVar(&disableGadgets, "disable-gadgets", "", "Comma-separated list of gadgets to disable (e.g. ptrace-restrict,cap-restrict)")
 }
 
 func run(ctx context.Context) error {
@@ -132,6 +134,11 @@ func run(ctx context.Context) error {
 	nsFilter := buildNamespaceFilter(filterNamespaces)
 	slog.Info("Namespace filter", "filter", nsFilter)
 
+	disabled := buildDisabledSet(disableGadgets)
+	if len(disabled) > 0 {
+		slog.Info("Disabled gadgets", "gadgets", disableGadgets)
+	}
+
 	commonParams := map[string]string{
 		"operator.oci.ebpf.enforce":           fmt.Sprintf("%d", utils.BoolToInt(enforce)),
 		"operator.LocalManager.k8s-namespace": nsFilter,
@@ -143,11 +150,13 @@ func run(ctx context.Context) error {
 		slog.Info("Filtering out containers by image digest", "digest", digest)
 	}
 
-	registry.Register("fs-restrict", &gadget.GadgetConfig{
-		Bytes:     fsRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", fsRestrictGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
+	if !disabled["fs-restrict"] {
+		registry.Register("fs-restrict", &gadget.GadgetConfig{
+			Bytes:     fsRestrictGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", fsRestrictGadgetImageRepo, Version),
+			Params:    commonParams,
+		})
+	}
 
 	capRestrictParams := map[string]string{
 		"operator.oci.ebpf.host_pidns_id": fmt.Sprintf("%d", hostPidnsID),
@@ -156,29 +165,37 @@ func run(ctx context.Context) error {
 		capRestrictParams[k] = v
 	}
 
-	registry.Register("cap-restrict", &gadget.GadgetConfig{
-		Bytes:     capRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", capRestrictGadgetImageRepo, Version),
-		Params:    capRestrictParams,
-	})
+	if !disabled["cap-restrict"] {
+		registry.Register("cap-restrict", &gadget.GadgetConfig{
+			Bytes:     capRestrictGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", capRestrictGadgetImageRepo, Version),
+			Params:    capRestrictParams,
+		})
+	}
 
-	registry.Register("ptrace-restrict", &gadget.GadgetConfig{
-		Bytes:     ptraceRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", ptraceRestrictGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
+	if !disabled["ptrace-restrict"] {
+		registry.Register("ptrace-restrict", &gadget.GadgetConfig{
+			Bytes:     ptraceRestrictGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", ptraceRestrictGadgetImageRepo, Version),
+			Params:    commonParams,
+		})
+	}
 
-	registry.Register("socket-restrict", &gadget.GadgetConfig{
-		Bytes:     socketRestrictGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", socketRestrictGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
+	if !disabled["socket-restrict"] {
+		registry.Register("socket-restrict", &gadget.GadgetConfig{
+			Bytes:     socketRestrictGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", socketRestrictGadgetImageRepo, Version),
+			Params:    commonParams,
+		})
+	}
 
-	registry.Register("binary-attestation", &gadget.GadgetConfig{
-		Bytes:     binaryAttestationGadgetBytes,
-		ImageName: fmt.Sprintf("%s:%s", binaryAttestationGadgetImageRepo, Version),
-		Params:    commonParams,
-	})
+	if !disabled["binary-attestation"] {
+		registry.Register("binary-attestation", &gadget.GadgetConfig{
+			Bytes:     binaryAttestationGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", binaryAttestationGadgetImageRepo, Version),
+			Params:    commonParams,
+		})
+	}
 
 	// Run all gadgets
 	if err := registry.RunAll(ctx); err != nil {
@@ -188,6 +205,21 @@ func run(ctx context.Context) error {
 	// Wait for context to be done (which happens on signal)
 	<-ctx.Done()
 	return nil
+}
+
+// buildDisabledSet parses a comma-separated list of gadget names into a set
+// for O(1) lookup. Empty string returns an empty set.
+func buildDisabledSet(disableGadgets string) map[string]bool {
+	disabled := make(map[string]bool)
+	if disableGadgets == "" {
+		return disabled
+	}
+	for _, name := range strings.Split(disableGadgets, ",") {
+		if n := strings.TrimSpace(name); n != "" {
+			disabled[n] = true
+		}
+	}
+	return disabled
 }
 
 // buildNamespaceFilter constructs the k8s-namespace filter value.
