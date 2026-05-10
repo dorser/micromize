@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/micromize-dev/micromize/internal/gadget"
+	k8sclient "github.com/micromize-dev/micromize/internal/k8s"
 	"github.com/micromize-dev/micromize/internal/logger"
 	"github.com/micromize-dev/micromize/internal/operators"
 	"github.com/micromize-dev/micromize/internal/runtime"
@@ -42,11 +43,12 @@ const (
 )
 
 var (
-	enforce          bool
-	verbose          bool
+	enforce           bool
+	verbose           bool
 	filterNamespaces  string
 	filterImageDigest string
 	disableGadgets    string
+	exemptLabel       string
 )
 
 var rootCmd = &cobra.Command{
@@ -75,6 +77,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all except 'micromize'). Supports exclusion with '!' prefix.")
 	rootCmd.PersistentFlags().StringVar(&filterImageDigest, "filter-image-digest", "", "Filter out containers running this image digest from monitoring (e.g. sha256:abc123...)")
 	rootCmd.PersistentFlags().StringVar(&disableGadgets, "disable-gadgets", "", "Comma-separated list of gadgets to disable (e.g. ptrace-restrict,cap-restrict)")
+	rootCmd.PersistentFlags().StringVar(&exemptLabel, "exempt-label", "micromize.dev/exempt", "Kubernetes label key used to mark namespaces as exempt from monitoring (value must be 'true'). Set to empty string to disable. Changes take effect on restart.")
 }
 
 func run(ctx context.Context) error {
@@ -132,6 +135,27 @@ func run(ctx context.Context) error {
 	}
 
 	nsFilter := buildNamespaceFilter(filterNamespaces)
+
+	// Discover namespaces exempt by label and append them as exclusions.
+	// Evaluated at startup only — a DaemonSet restart is required to pick up
+	// changes to namespace labels.
+	if exemptLabel != "" {
+		k8s, err := k8sclient.NewClient()
+		if err != nil {
+			slog.Warn("Could not build Kubernetes client for exempt label discovery; skipping", "error", err)
+		} else {
+			exemptNS, err := k8sclient.ListExemptNamespaces(ctx, k8s, exemptLabel)
+			if err != nil {
+				slog.Warn("Could not list exempt namespaces; skipping", "label", exemptLabel, "error", err)
+			} else if len(exemptNS) > 0 {
+				slog.Info("Exempt namespaces discovered (startup only)", "namespaces", exemptNS, "label", exemptLabel)
+				for _, ns := range exemptNS {
+					nsFilter += ",!" + ns
+				}
+			}
+		}
+	}
+
 	slog.Info("Namespace filter", "filter", nsFilter)
 
 	disabled := buildDisabledSet(disableGadgets)

@@ -56,6 +56,11 @@ spec:
             {{- if .Values.image.digest }}
             - --filter-image-digest={{ .Values.image.digest }}
             {{- end }}
+            {{- if .Values.exemptLabel }}
+            - --exempt-label={{ .Values.exemptLabel }}
+            {{- else }}
+            - --exempt-label=
+            {{- end }}
             {{- with .Values.args }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
