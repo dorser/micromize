@@ -14,6 +14,12 @@ enforce: true
 
 filterNamespaces: ""
 
+# Label key used to discover exempt namespaces from the Kubernetes API at
+# startup. Any namespace with this label set to "true" will be excluded from
+# monitoring. Set to empty string to disable this feature.
+# NOTE: changes to namespace labels require a DaemonSet restart to take effect.
+exemptLabel: "micromize.dev/exempt"
+
 args: []
 
 # Priority class to ensure the pod is scheduled and not preempted
