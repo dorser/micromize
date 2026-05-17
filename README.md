@@ -9,8 +9,6 @@ Kernel-enforced boundary hardening for cloud-native containers.
 
 Micromize uses [BPF-LSM](https://docs.ebpf.io/linux/program-type/BPF_PROG_TYPE_LSM/) to enforce what well-behaved cloud-native containers should look like. Micromize is built on [Inspektor Gadget](https://github.com/inspektor-gadget/inspektor-gadget).
 
-![Demo](docs/images/demo.gif)
-
 ## The Problem
 
 Containers rely on namespaces, cgroups, seccomp, and LSMs but they still expose kernel attack surface. Misconfigured or overly privileged workloads lead to container escape primitives, host mutation from containers, runtime drift from the image, and undefined kernel behavior.
@@ -75,8 +73,10 @@ helm install micromize ./charts/micromize \
 |---|---|---|
 | `--enforce` | `true` | Enforce restrictions (block) vs audit mode |
 | `--verbose` / `-v` | `false` | Debug logging |
-| `--filter-namespaces` | `""` | Comma-separated K8s namespaces to monitor (`!` prefix to exclude) |
+| `--filter-namespaces` | `""` | Comma-separated K8s namespaces to monitor (`!` prefix to exclude). The `micromize` namespace is always excluded. |
 | `--filter-image-digest` | `""` | Filter out containers running this image digest from monitoring |
+| `--disable-gadgets` | `""` | Comma-separated list of gadgets to disable (e.g. `ptrace-restrict,cap-restrict`) |
+| `--exempt-label` | `micromize.dev/exempt` | Kubernetes label key used to mark namespaces as exempt (value must be `true`). Evaluated at startup only. Set to `""` to disable. |
 
 ## Requirements
 
