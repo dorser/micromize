@@ -3,8 +3,16 @@ name: License Headers
 on:
   push:
     branches: [main]
+    paths:
+      - '**/*.go'
+      - 'Makefile'
+      - '.github/workflows/license.yml'
   pull_request:
     branches: [main]
+    paths:
+      - '**/*.go'
+      - 'Makefile'
+      - '.github/workflows/license.yml'
 
 permissions:
   contents: read
