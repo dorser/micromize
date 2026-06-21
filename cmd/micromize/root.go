@@ -39,6 +39,7 @@ const (
 	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/gadgets/cap-restrict"
 	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/gadgets/ptrace-restrict"
 	socketRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/gadgets/socket-restrict"
+	usernsRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/gadgets/userns-restrict"
 )
 
 var (
@@ -212,6 +213,14 @@ func run(ctx context.Context) error {
 		registry.Register("socket-restrict", &gadget.GadgetConfig{
 			Bytes:     socketRestrictGadgetBytes,
 			ImageName: fmt.Sprintf("%s:%s", socketRestrictGadgetImageRepo, Version),
+			Params:    commonParams,
+		})
+	}
+
+	if !disabled["userns-restrict"] {
+		registry.Register("userns-restrict", &gadget.GadgetConfig{
+			Bytes:     usernsRestrictGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", usernsRestrictGadgetImageRepo, Version),
 			Params:    commonParams,
 		})
 	}

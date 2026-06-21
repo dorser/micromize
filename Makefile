@@ -7,7 +7,7 @@ GOARCHS := amd64 arm64
 LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.53.2 \
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
-GADGETS := fs-restrict cap-restrict ptrace-restrict socket-restrict sigward
+GADGETS := fs-restrict cap-restrict ptrace-restrict socket-restrict sigward userns-restrict
 CONFORM_VERSION ?= v0.1.0-alpha.31
 
 # This version number must be kept in sync with CI workflow lint one.
@@ -97,6 +97,10 @@ run-cap-restrict:
 .PHONY: run-socket-restrict
 run-socket-restrict:
 	sudo -E ig run $(CONTAINER_REPO)/gadgets/socket-restrict:$(IMAGE_TAG) $$PARAMS
+
+.PHONY: run-userns-restrict
+run-userns-restrict:
+	sudo -E ig run $(CONTAINER_REPO)/userns-restrict:$(IMAGE_TAG) $$PARAMS
 
 .PHONY: push
 push:

@@ -20,3 +20,4 @@ var fsRestrictGadgetBytes []byte
 var capRestrictGadgetBytes []byte
 var ptraceRestrictGadgetBytes []byte
 var socketRestrictGadgetBytes []byte
+var usernsRestrictGadgetBytes []byte

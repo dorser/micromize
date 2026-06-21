@@ -33,6 +33,7 @@ Today, Micromize attaches eBPF programs to LSM hooks and enforces:
 - **Capability restriction** — prevents privilege escalation via `unshare`/`clone`/`setns`
 - **Ptrace blocking** — eliminates ptrace-based debugging/injection attacks
 - **Socket restriction** — blocks `AF_ALG` (kernel crypto userspace API) socket usage in containers, mitigating CVE-2026-31431 and related attack surface
+- **User namespace restriction** — blocks `CLONE_NEWUSER` from containers via `lsm/userns_create`, eliminating the precondition for nf_tables / OverlayFS / net-sched LPE chains (CVE-2022-32250, CVE-2023-32233, CVE-2024-1086, CVE-2024-26925, CVE-2023-0386, …). Requires Linux 6.1+.
 
 Policies are loaded before container start and enforced at execution time. No runtime replacement. No learning mode. Kernel-native enforcement.
 
@@ -92,6 +93,7 @@ helm install micromize ./charts/micromize \
 
 - Linux kernel 5.18+
 - BPF LSM enabled (`CONFIG_BPF_LSM=y`, boot with `lsm=...,bpf`)
+- Linux **6.1+** required for `userns-restrict` (uses the `lsm/userns_create` hook added in 6.1). On 5.18–6.0 disable it with `--disable-gadgets=userns-restrict`.
 
 ## Development
 
