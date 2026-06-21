@@ -1,0 +1,27 @@
+version: 0.1.0
+name: iouring-restrict
+displayName: iouring restrict
+createdAt: "2026-05-18T00:00:00Z"
+description: "Detect io_uring usage from containers"
+logoURL: "https://inspektor-gadget.io/media/brand-icon.svg"
+license: "Apache-2.0"
+homeURL: "https://github.com/micromize-dev/micromize/tree/main/gadgets/iouring-restrict"
+containersImages:
+    - name: gadget
+      image: "ghcr.io/micromize-dev/micromize/gadgets/iouring-restrict:latest"
+      platforms:
+        - linux/amd64
+        - linux/arm64
+keywords:
+    - gadget
+    - security
+links:
+    - name: source
+      url: "https://github.com/micromize-dev/micromize/tree/main/gadgets/iouring-restrict"
+install: |
+    # Run
+    ```bash
+    sudo ig run ghcr.io/micromize-dev/micromize/gadgets/iouring-restrict:latest
+    ```
+provider:
+    name: Micromize

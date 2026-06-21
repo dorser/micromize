@@ -46,6 +46,12 @@ func TestBuildDisabledSet(t *testing.T) {
 			wantDisabled:   []string{"ptrace-restrict", "cap-restrict"},
 			wantEnabled:    []string{"fs-restrict"},
 		},
+		{
+			name:           "iouring-restrict can be disabled",
+			disableGadgets: "iouring-restrict",
+			wantDisabled:   []string{"iouring-restrict"},
+			wantEnabled:    []string{"fs-restrict", "socket-restrict"},
+		},
 	}
 
 	for _, tt := range tests {

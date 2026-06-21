@@ -31,3 +31,6 @@ var ptraceRestrictGadgetBytes []byte
 
 //go:embed build/socket-restrict.tar
 var socketRestrictGadgetBytes []byte
+
+//go:embed build/iouring-restrict.tar
+var iouringRestrictGadgetBytes []byte

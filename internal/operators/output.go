@@ -44,6 +44,9 @@ var eventDescriptions = map[uint32]string{
 	eventTypeCapModuleAutoload:        "Kernel module auto-load blocked",
 	eventTypeSocketAFKeyCreate:        "AF_KEY (PF_KEY IPsec) socket creation blocked",
 	eventTypeSocketXfrmNetlinkCreate:  "XFRM/IPsec netlink socket creation blocked",
+	eventTypeIouringSetup:             "io_uring_setup invoked",
+	eventTypeIouringEnter:             "io_uring_enter invoked",
+	eventTypeIouringRegister:          "io_uring_register invoked",
 }
 
 var eventEmojis = map[uint32]string{}

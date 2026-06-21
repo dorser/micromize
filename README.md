@@ -33,6 +33,7 @@ Today, Micromize attaches eBPF programs to LSM hooks and enforces:
 - **Capability restriction** — prevents privilege escalation via `unshare`/`clone`/`setns`
 - **Ptrace blocking** — eliminates ptrace-based debugging/injection attacks
 - **Socket restriction** — blocks `AF_ALG` (kernel crypto userspace API) socket usage in containers, mitigating CVE-2026-31431 and related attack surface
+- **io_uring surface monitoring** — *observe-only today* — surfaces `io_uring_setup`/`_enter`/`_register` calls from monitored containers, pre-positioning visibility into the io_uring LPE family (CVE-2022-1116, CVE-2023-2598, CVE-2024-0582, CVE-2023-2236, CVE-2023-21400). Pair with the Docker / Kubernetes `RuntimeDefault` seccomp profile (blocks io_uring since `moby/moby#46762`) for actual blocking.
 
 Policies are loaded before container start and enforced at execution time. No runtime replacement. No learning mode. Kernel-native enforcement.
 

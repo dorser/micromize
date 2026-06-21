@@ -1,0 +1,7 @@
+# Artifact Hub repository metadata file
+# https://github.com/artifacthub/hub/blob/master/docs/metadata/artifacthub-repo.yml
+
+repositoryID: 71b04315-f2b9-49df-a589-a26e2df9758a
+owners:
+  - name: Micromize
+    email: contact@micromize.dev
