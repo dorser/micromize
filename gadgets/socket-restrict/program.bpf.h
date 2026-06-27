@@ -12,6 +12,18 @@
 #define AF_ALG 38
 #endif
 
+#ifndef AF_KEY
+#define AF_KEY 15
+#endif
+
+#ifndef AF_NETLINK
+#define AF_NETLINK 16
+#endif
+
+#ifndef NETLINK_XFRM
+#define NETLINK_XFRM 6
+#endif
+
 #define SOCKADDR_ALG_TYPE_OFFSET 2
 #define SOCKADDR_ALG_TYPE_LEN 14
 #define SOCKADDR_ALG_TYPE_END (SOCKADDR_ALG_TYPE_OFFSET + SOCKADDR_ALG_TYPE_LEN)
