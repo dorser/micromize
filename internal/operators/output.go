@@ -42,6 +42,8 @@ var eventDescriptions = map[uint32]string{
 	eventTypeSocketAFAlgCreate:        "AF_ALG socket creation blocked",
 	eventTypeSocketAFAlgBind:          "AF_ALG socket bind blocked",
 	eventTypeCapModuleAutoload:        "Kernel module auto-load blocked",
+	eventTypeSocketAFKeyCreate:        "AF_KEY (PF_KEY IPsec) socket creation blocked",
+	eventTypeSocketXfrmNetlinkCreate:  "XFRM/IPsec netlink socket creation blocked",
 }
 
 var eventEmojis = map[uint32]string{}

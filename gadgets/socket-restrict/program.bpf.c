@@ -16,7 +16,16 @@ GADGET_TRACER_MAP(events, 1024 * 256);
 
 GADGET_TRACER(socket_restrict, events, event);
 
-// Block AF_ALG socket creation — main choke point.
+// Block dangerous socket families at creation — the main choke point.
+//
+//   - AF_ALG          kernel crypto userspace API (CVE-2026-31431, "Copy Fail")
+//   - AF_KEY          PF_KEY IPsec key management
+//   - AF_NETLINK/XFRM XFRM/IPsec state & policy configuration
+//
+// AF_KEY and NETLINK_XFRM are the only ways to configure XFRM/IPsec from
+// userspace and are the entry point for the DirtyClone killchain
+// (CVE-2026-43503), a kernel LPE on the XFRM/ESP packet path. Blocking them
+// here removes the attack surface before any vulnerable kernel code is reached.
 SEC("lsm/socket_create")
 int BPF_PROG(micromize_socket_create, int family, int type, int protocol,
              int kern) {
@@ -26,8 +35,16 @@ int BPF_PROG(micromize_socket_create, int family, int type, int protocol,
   if (gadget_should_discard_data_current())
     return 0;
 
-  if (family != AF_ALG)
+  __u32 event_type;
+  if (family == AF_ALG) {
+    event_type = EVENT_TYPE_SOCKET_AF_ALG_CREATE;
+  } else if (family == AF_KEY) {
+    event_type = EVENT_TYPE_SOCKET_AF_KEY_CREATE;
+  } else if (family == AF_NETLINK && protocol == NETLINK_XFRM) {
+    event_type = EVENT_TYPE_SOCKET_XFRM_NETLINK_CREATE;
+  } else {
     return 0;
+  }
 
   struct event *event;
   event = gadget_reserve_buf(&events, sizeof(*event));
@@ -39,8 +56,8 @@ int BPF_PROG(micromize_socket_create, int family, int type, int protocol,
 
   gadget_process_populate(&event->process);
   event->timestamp_raw = bpf_ktime_get_boot_ns();
-  event->event_type = EVENT_TYPE_SOCKET_AF_ALG_CREATE;
-  event->family = AF_ALG;
+  event->event_type = event_type;
+  event->family = family;
   event->alg_type[0] = '\0';
   event->alg_name[0] = '\0';
 
