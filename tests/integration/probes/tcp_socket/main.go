@@ -35,5 +35,15 @@ func main() {
 	}
 	syscall.Close(fd) //nolint:errcheck,gosec
 
+	// NETLINK_ROUTE (rtnetlink) is used by ordinary tooling such as `ip` and
+	// glibc name resolution. socket-restrict only blocks NETLINK_XFRM, so this
+	// must keep working.
+	fd, err = syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_ROUTE)
+	if err != nil {
+		fmt.Printf("blocked: NETLINK_ROUTE socket creation failed: %v\n", err)
+		os.Exit(1)
+	}
+	syscall.Close(fd) //nolint:errcheck,gosec
+
 	fmt.Println("ok: TCP and UDP sockets work normally")
 }
