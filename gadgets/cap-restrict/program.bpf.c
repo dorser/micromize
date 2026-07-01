@@ -90,7 +90,11 @@ int micromize_setns_enter(struct syscall_trace_enter *ctx) {
 
 SEC("lsm/capable")
 int BPF_PROG(micromize_capable, const struct cred *cred,
-             struct user_namespace *ns, int cap, unsigned int opts) {
+             struct user_namespace *ns, int cap, unsigned int opts, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (gadget_should_discard_data_current())
     return 0;
 
@@ -135,7 +139,11 @@ int BPF_PROG(micromize_capable, const struct cred *cred,
 }
 
 SEC("lsm/kernel_module_request")
-int BPF_PROG(micromize_kernel_module_request, char *kmod_name) {
+int BPF_PROG(micromize_kernel_module_request, char *kmod_name, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (gadget_should_discard_data_current())
     return 0;
 

@@ -28,7 +28,11 @@ GADGET_TRACER(socket_restrict, events, event);
 // here removes the attack surface before any vulnerable kernel code is reached.
 SEC("lsm/socket_create")
 int BPF_PROG(micromize_socket_create, int family, int type, int protocol,
-             int kern) {
+             int kern, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (kern)
     return 0;
 
@@ -73,8 +77,12 @@ int BPF_PROG(micromize_socket_create, int family, int type, int protocol,
 // policy load. Preserves alg_type/alg_name for visibility.
 SEC("lsm/socket_bind")
 int BPF_PROG(micromize_socket_bind, struct socket *sock,
-             struct sockaddr *address, int addrlen) {
+             struct sockaddr *address, int addrlen, int ret) {
   (void)sock;
+
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
 
   if (gadget_should_discard_data_current())
     return 0;
