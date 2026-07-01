@@ -137,7 +137,12 @@ attest_file(void *ctx, struct file *file, __u32 unattested_event_type,
 }
 
 SEC("lsm.s/bprm_check_security")
-int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
+int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm,
+             int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (gadget_should_discard_data_current())
     return 0;
 
@@ -147,7 +152,11 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm) {
 
 SEC("lsm.s/mmap_file")
 int BPF_PROG(micromize_mmap_file, struct file *file, unsigned long reqprot,
-             unsigned long prot, unsigned long flags) {
+             unsigned long prot, unsigned long flags, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (!file)
     return 0;
 

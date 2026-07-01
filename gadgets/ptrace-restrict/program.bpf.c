@@ -18,7 +18,11 @@ GADGET_TRACER(ptrace_restrict, events, event);
 
 SEC("lsm/ptrace_access_check")
 int BPF_PROG(micromize_ptrace_access_check, struct task_struct *child,
-             unsigned int mode) {
+             unsigned int mode, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (gadget_should_discard_data_current())
     return 0;
 
@@ -40,7 +44,11 @@ int BPF_PROG(micromize_ptrace_access_check, struct task_struct *child,
 }
 
 SEC("lsm/ptrace_traceme")
-int BPF_PROG(micromize_ptrace_traceme, struct task_struct *parent) {
+int BPF_PROG(micromize_ptrace_traceme, struct task_struct *parent, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (gadget_should_discard_data_current())
     return 0;
 

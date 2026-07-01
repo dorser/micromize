@@ -97,7 +97,11 @@ static __always_inline bool is_container_procfs(struct task_struct *task,
 }
 
 SEC("lsm/file_open")
-int BPF_PROG(micromize_file_open, struct file *file) {
+int BPF_PROG(micromize_file_open, struct file *file, int ret) {
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
+
   if (gadget_should_discard_data_current())
     return 0;
 
@@ -144,9 +148,14 @@ int BPF_PROG(micromize_file_open, struct file *file) {
 }
 
 SEC("lsm/bprm_creds_for_exec")
-int BPF_PROG(micromize_bprm_creds_for_exec, struct linux_binprm *bprm) {
+int BPF_PROG(micromize_bprm_creds_for_exec, struct linux_binprm *bprm,
+             int ret) {
   struct task_struct *task;
   struct file *file;
+
+  // Preserve a deny decision from a previously-run LSM program in the chain.
+  if (ret)
+    return ret;
 
   if (gadget_should_discard_data_current())
     return 0;
