@@ -92,15 +92,6 @@
     },
     "podAnnotations": {
       "type": "object"
-    },
-    "registryAuth": {
-      "type": "object",
-      "properties": {
-        "existingSecret": {
-          "type": "string",
-          "description": "Name of an existing Kubernetes secret of type kubernetes.io/dockerconfigjson for private registry authentication"
-        }
-      }
     }
   }
 }
