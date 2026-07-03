@@ -36,11 +36,11 @@ import (
 )
 
 const (
-	fsRestrictGadgetImageRepo        = "ghcr.io/micromize-dev/micromize/fs-restrict"
-	capRestrictGadgetImageRepo       = "ghcr.io/micromize-dev/micromize/cap-restrict"
-	ptraceRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
-	socketRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/socket-restrict"
-	binaryAttestationGadgetImageRepo = "ghcr.io/micromize-dev/micromize/binary-attestation"
+	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/fs-restrict"
+	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/cap-restrict"
+	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
+	socketRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/socket-restrict"
+	sigwardGadgetImageRepo        = "ghcr.io/micromize-dev/micromize/sigward"
 )
 
 var (
@@ -214,10 +214,10 @@ func run(ctx context.Context) error {
 		})
 	}
 
-	if !disabled["binary-attestation"] {
-		registry.Register("binary-attestation", &gadget.GadgetConfig{
-			Bytes:     binaryAttestationGadgetBytes,
-			ImageName: fmt.Sprintf("%s:%s", binaryAttestationGadgetImageRepo, Version),
+	if !disabled["sigward"] {
+		registry.Register("sigward", &gadget.GadgetConfig{
+			Bytes:     sigwardGadgetBytes,
+			ImageName: fmt.Sprintf("%s:%s", sigwardGadgetImageRepo, Version),
 			Params:    commonParams,
 		})
 	}

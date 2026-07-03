@@ -20,4 +20,4 @@ var fsRestrictGadgetBytes []byte
 var capRestrictGadgetBytes []byte
 var ptraceRestrictGadgetBytes []byte
 var socketRestrictGadgetBytes []byte
-var binaryAttestationGadgetBytes []byte
+var sigwardGadgetBytes []byte

@@ -32,5 +32,5 @@ var ptraceRestrictGadgetBytes []byte
 //go:embed build/socket-restrict.tar
 var socketRestrictGadgetBytes []byte
 
-//go:embed build/binary-attestation.tar
-var binaryAttestationGadgetBytes []byte
+//go:embed build/sigward.tar
+var sigwardGadgetBytes []byte

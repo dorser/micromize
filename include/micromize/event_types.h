@@ -20,7 +20,7 @@ enum micromize_event_type {
   EVENT_TYPE_PTRACE_ACCESS = 5,
   EVENT_TYPE_PTRACE_TRACEME = 6,
 
-  // binary-attestation
+  // sigward
   EVENT_TYPE_UNATTESTED_BINARY = 7,
   EVENT_TYPE_HASH_MISMATCH = 8,
   EVENT_TYPE_UNATTESTED_SHARED_OBJECT = 9,

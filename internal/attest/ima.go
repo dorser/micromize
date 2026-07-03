@@ -132,7 +132,7 @@ func handleContainerCreated(ctx context.Context, gadgetCtx igoperators.GadgetCon
 	}
 }
 
-// Keep in sync with gadgets/binary-attestation/program.bpf.h
+// Keep in sync with gadgets/sigward/program.bpf.h
 const (
 	expectedHashesMapName = "map/expected_hashes"
 	maxAllowedFileHashes  = 512

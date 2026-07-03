@@ -16,7 +16,7 @@ GADGET_PARAM(enforce);
 
 GADGET_TRACER_MAP(events, 1024 * 256);
 
-GADGET_TRACER(binary_attestation, events, event);
+GADGET_TRACER(sigward, events, event);
 
 // Inner map template: filepath -> sha256
 struct {
@@ -62,7 +62,7 @@ attest_file(void *ctx, struct file *file, __u32 unattested_event_type,
   // Look up the expected hash for this file path
   struct sha256_hash *expected = bpf_map_lookup_elem(inner, &fkey);
   if (!expected) {
-    bpf_printk("binary-attestation: Unattested file %s in mntns_id=%llu\n",
+    bpf_printk("sigward: Unattested file %s in mntns_id=%llu\n",
                fkey.path, mntns_id);
 
     struct event *event;
@@ -85,24 +85,24 @@ attest_file(void *ctx, struct file *file, __u32 unattested_event_type,
   }
 
   bpf_printk(
-      "binary-attestation: Found expected hash for file %s in mntns_id=%llu\n",
+      "sigward: Found expected hash for file %s in mntns_id=%llu\n",
       fkey.path, mntns_id);
 
   // Calculate the IMA hash of the file
   struct sha256_hash computed = {};
   long ret = bpf_ima_file_hash(file, computed.hash, SHA256_HASH_SIZE);
-  bpf_printk("binary-attestation: bpf_ima_file_hash returned %ld for %s\n", ret,
+  bpf_printk("sigward: bpf_ima_file_hash returned %ld for %s\n", ret,
              fkey.path);
   if (ret != HASH_ALGO_SHA256) {
     // IMA did not return a SHA256 hash (e.g., disabled or misconfigured).
     // Logging so operators can detect that attestation was skipped.
-    bpf_printk("binary-attestation: IMA hash algorithm (%ld) is not SHA256; "
+    bpf_printk("sigward: IMA hash algorithm (%ld) is not SHA256; "
                "skipping attestation for %s in mntns_id=%llu\n",
                ret, fkey.path, mntns_id);
     return 0;
   }
 
-  bpf_printk("binary-attestation: Computed hash for file %s in mntns_id=%llu\n",
+  bpf_printk("sigward: Computed hash for file %s in mntns_id=%llu\n",
              fkey.path, mntns_id);
 
   // Compare computed hash with the expected hash
@@ -110,7 +110,7 @@ attest_file(void *ctx, struct file *file, __u32 unattested_event_type,
   for (i = 0; i < SHA256_HASH_SIZE; i++) {
     if (computed.hash[i] != expected->hash[i]) {
       bpf_printk(
-          "binary-attestation: Hash mismatch for %s in mntns_id=%llu\n",
+          "sigward: Hash mismatch for %s in mntns_id=%llu\n",
           fkey.path, mntns_id);
 
       struct event *event;
@@ -137,7 +137,7 @@ attest_file(void *ctx, struct file *file, __u32 unattested_event_type,
 }
 
 SEC("lsm.s/bprm_check_security")
-int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm,
+int BPF_PROG(sigward_bprm_check_security, struct linux_binprm *bprm,
              int ret) {
   // Preserve a deny decision from a previously-run LSM program in the chain.
   if (ret)
@@ -151,7 +151,7 @@ int BPF_PROG(micromize_bprm_check_security, struct linux_binprm *bprm,
 }
 
 SEC("lsm.s/mmap_file")
-int BPF_PROG(micromize_mmap_file, struct file *file, unsigned long reqprot,
+int BPF_PROG(sigward_mmap_file, struct file *file, unsigned long reqprot,
              unsigned long prot, unsigned long flags, int ret) {
   // Preserve a deny decision from a previously-run LSM program in the chain.
   if (ret)
