@@ -132,7 +132,7 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("getting host pid namespace ID: %w", err)
 	}
 
-	nsFilter := buildNamespaceFilter(filterNamespaces)
+	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, "micromize")
 
 	// Discover namespaces exempt by label and append them as exclusions.
 	// Evaluated at startup only — a DaemonSet restart is required to pick up
@@ -234,26 +234,4 @@ func buildDisabledSet(disableGadgets string) map[string]bool {
 		}
 	}
 	return disabled
-}
-
-// buildNamespaceFilter constructs the k8s-namespace filter value.
-// It always excludes the "micromize" namespace and appends any user-specified
-// namespace filters. When filterNamespaces is empty, only "!micromize" is used.
-func buildNamespaceFilter(filterNamespaces string) string {
-	const excludeMicromize = "!micromize"
-	normalizedFilter := excludeMicromize
-
-	if filterNamespaces == "" {
-		return normalizedFilter
-	}
-
-	parts := strings.Split(filterNamespaces, ",")
-	for _, p := range parts {
-		nsPart := strings.TrimSpace(p)
-		if nsPart != excludeMicromize {
-			normalizedFilter += "," + nsPart
-		}
-	}
-
-	return normalizedFilter
 }

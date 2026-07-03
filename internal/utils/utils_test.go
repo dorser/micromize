@@ -102,3 +102,30 @@ func TestValidateBPFLSM_FileNotFound(t *testing.T) {
 		t.Errorf("Expected error when file doesn't exist, but got nil")
 	}
 }
+
+func TestBuildNamespaceFilter(t *testing.T) {
+	tests := []struct {
+		name             string
+		filterNamespaces string
+		selfNamespace    string
+		want             string
+	}{
+		{"empty returns only self exclusion", "", "micromize", "!micromize"},
+		{"single namespace", "default", "micromize", "!micromize,default"},
+		{"multiple namespaces", "default,kube-system", "sigward", "!sigward,default,kube-system"},
+		{"user already excludes self", "default,!sigward", "sigward", "!sigward,default"},
+		{"only self exclusion", "!micromize", "micromize", "!micromize"},
+		{"exclusion filter", "!kube-system", "sigward", "!sigward,!kube-system"},
+		{"empty segments skipped", "default,,kube-system,", "sigward", "!sigward,default,kube-system"},
+		{"whitespace trimmed", " default , kube-system ", "micromize", "!micromize,default,kube-system"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := BuildNamespaceFilter(tt.filterNamespaces, tt.selfNamespace)
+			if got != tt.want {
+				t.Errorf("BuildNamespaceFilter(%q, %q) = %q, want %q", tt.filterNamespaces, tt.selfNamespace, got, tt.want)
+			}
+		})
+	}
+}

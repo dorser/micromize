@@ -122,7 +122,7 @@ func run(ctx context.Context) error {
 	// Create gadget registry
 	registry := gadget.NewRegistry(contextManager, runtimeManager)
 
-	nsFilter := buildNamespaceFilter(filterNamespaces)
+	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, "sigward")
 
 	// Discover namespaces exempt by label and append them as exclusions.
 	// Evaluated at startup only — a DaemonSet restart is required to pick up
@@ -171,29 +171,4 @@ func run(ctx context.Context) error {
 	// Wait for context to be done (which happens on signal)
 	<-ctx.Done()
 	return nil
-}
-
-// buildNamespaceFilter constructs the k8s-namespace filter value.
-// It always excludes the "sigward" namespace and appends any user-specified
-// namespace filters. When filterNamespaces is empty, only "!sigward" is used.
-func buildNamespaceFilter(filterNamespaces string) string {
-	const excludeSigward = "!sigward"
-	normalizedFilter := excludeSigward
-
-	if filterNamespaces == "" {
-		return normalizedFilter
-	}
-
-	parts := strings.Split(filterNamespaces, ",")
-	for _, p := range parts {
-		nsPart := strings.TrimSpace(p)
-		if nsPart == "" {
-			continue
-		}
-		if nsPart != excludeSigward {
-			normalizedFilter += "," + nsPart
-		}
-	}
-
-	return normalizedFilter
 }
