@@ -122,8 +122,10 @@ func run(ctx context.Context) error {
 	// Create gadget registry
 	registry := gadget.NewRegistry(contextManager, runtimeManager)
 
-	selfNamespace := k8sclient.CurrentNamespace("sigward")
-	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, selfNamespace)
+	// Sigward attests every namespace, including its own — it follows its own
+	// attestation rules rather than exempting itself. Operators can still scope
+	// coverage with --filter-namespaces and --exempt-label.
+	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, "")
 
 	// Discover namespaces exempt by label and append them as exclusions.
 	// Evaluated at startup only — a DaemonSet restart is required to pick up
