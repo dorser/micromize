@@ -234,8 +234,8 @@ func ParseFiles(sbomData []byte) ([]FileInfo, error) {
 		if !isBinary(f.FileTypes) && !isScript(f.FileName) {
 			continue
 		}
-		if !isAbsolutePath(f.FileName) {
-			slog.Warn("Skipping SBOM file with relative path", "file", f.FileName)
+		if !isSafeSBOMPath(f.FileName) {
+			slog.Warn("Skipping SBOM file with unsafe path (empty or contains '..')", "file", f.FileName)
 			continue
 		}
 		for _, c := range f.Checksums {
@@ -251,16 +251,15 @@ func ParseFiles(sbomData []byte) ([]FileInfo, error) {
 	return files, nil
 }
 
-// isAbsolutePath checks that the SBOM filename is a valid absolute path
-// (optionally with "./" SPDX prefix) and does not contain ".." traversal
-// components.
-func isAbsolutePath(name string) bool {
+// isSafeSBOMPath reports whether the SBOM filename is safe to use as a lookup
+// key: it must be non-empty and must not contain any ".." parent-directory
+// traversal components. It does not require the path to be absolute (SPDX
+// filenames may be relative or "./"-prefixed; callers normalize them later).
+func isSafeSBOMPath(name string) bool {
 	if name == "" {
 		return false
 	}
 
-	// Reject any remaining ".." components (Clean resolves most, but
-	// e.g. "/../foo" → "/foo" is fine—check the original intent).
 	for _, part := range strings.Split(name, "/") {
 		if part == ".." {
 			return false

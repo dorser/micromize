@@ -243,7 +243,7 @@ func TestExtractSPDXFromDSSE(t *testing.T) {
 	}
 }
 
-func TestParseFiles_RejectsRelativePaths(t *testing.T) {
+func TestParseFiles_RejectsPathTraversal(t *testing.T) {
 	makeSBOM := func(files []map[string]any) []byte {
 		doc := map[string]any{"files": files}
 		b, _ := json.Marshal(doc)
