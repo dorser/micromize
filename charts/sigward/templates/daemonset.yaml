@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "sigward.fullname" . }}
+  labels:
+    {{- include "sigward.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "sigward.selectorLabels" . | nindent 6 }}
+  {{- with .Values.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      annotations:
+        # Required for accessing securityfs and BPF subsystem on systems with AppArmor
+        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: "unconfined"
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "sigward.selectorLabels" . | nindent 8 }}
+    spec:
+      hostPID: true
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      serviceAccountName: {{ include "sigward.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                # Required for loading BPF programs.
+                - SYS_ADMIN
+                # Required for reading kernel logs.
+                - SYSLOG
+                # Required for ptrace-based gadgets.
+                - SYS_PTRACE
+                # Required for setting rlimits (e.g. memlock).
+                - SYS_RESOURCE
+                # Required for locking memory for BPF maps.
+                - IPC_LOCK
+          image: "{{ .Values.image.repository }}:{{ required "A valid .Values.image.tag is required!" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --enforce={{ .Values.enforce }}
+            {{- if .Values.filterNamespaces }}
+            - --filter-namespaces={{ .Values.filterNamespaces }}
+            {{- end }}
+            {{- if .Values.image.digest }}
+            - --filter-image-digest={{ .Values.image.digest }}
+            {{- end }}
+            {{- if .Values.exemptLabel }}
+            - --exempt-label={{ .Values.exemptLabel }}
+            {{- else }}
+            - --exempt-label=
+            {{- end }}
+            {{- with .Values.args }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.logLevel | quote }}
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- if .Values.registryAuth.existingSecret }}
+            - name: DOCKER_CONFIG
+              value: /etc/docker-registry
+            {{- end }}
+          volumeMounts:
+            # Required for pinning BPF maps.
+            - mountPath: /sys/fs/bpf
+              name: bpf
+            # Required for accessing debugfs (e.g. for kprobes).
+            - mountPath: /sys/kernel/debug
+              name: debugfs
+            # Required for validating BPF LSM is enabled.
+            - mountPath: /sys/kernel/security
+              name: security
+              readOnly: true
+            # Required for container level enrichment.
+            - mountPath: /host/bin
+              name: host-bin
+            # Required for accessing host process information.
+            - mountPath: /host/proc
+              name: host-proc
+            # Required for accessing container runtime sockets.
+            - mountPath: /host/run
+              name: host-run
+            # Required for container level enrichment.
+            - mountPath: /host/usr
+              name: host-usr
+            {{- if .Values.registryAuth.existingSecret }}
+            - mountPath: /etc/docker-registry
+              name: registry-auth
+              readOnly: true
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: bpf
+          hostPath:
+            path: /sys/fs/bpf
+        - name: debugfs
+          hostPath:
+            path: /sys/kernel/debug
+        - name: security
+          hostPath:
+            path: /sys/kernel/security
+        - name: host-bin
+          hostPath:
+            path: /bin
+        - name: host-proc
+          hostPath:
+            path: /proc
+        - name: host-run
+          hostPath:
+            path: /run
+        - name: host-usr
+          hostPath:
+            path: /usr
+        {{- if .Values.registryAuth.existingSecret }}
+        - name: registry-auth
+          secret:
+            secretName: {{ .Values.registryAuth.existingSecret }}
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

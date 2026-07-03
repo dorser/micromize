@@ -1,0 +1,62 @@
+image:
+  repository: ghcr.io/micromize-dev/sigward
+  pullPolicy: IfNotPresent
+  # The image tag is required.
+  tag: ""
+  # Image digest for self-exclusion filtering. When set, sigward filters out
+  # containers running this digest from monitoring. Resolve with:
+  #   crane digest ghcr.io/micromize-dev/sigward:<tag>
+  digest: ""
+
+logLevel: info
+
+enforce: true
+
+filterNamespaces: ""
+
+# Label key used to discover exempt namespaces from the Kubernetes API at
+# startup. Any namespace with this label set to "true" will be excluded from
+# monitoring. Set to empty string to disable this feature.
+# NOTE: changes to namespace labels require a DaemonSet restart to take effect.
+exemptLabel: "sigward.dev/exempt"
+
+args: []
+
+# Priority class to ensure the pod is scheduled and not preempted
+priorityClassName: "system-node-critical"
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+resources:
+  limits:
+    cpu: 50m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations:
+  - effect: NoSchedule
+    operator: Exists
+  - effect: NoExecute
+    operator: Exists
+
+serviceAccount:
+  create: true
+  name: "sigward"
+  annotations: {}
+
+podAnnotations: {}
+
+# Registry authentication for SBOM fetching from private registries.
+# Provide the name of an existing Kubernetes secret of type
+# kubernetes.io/dockerconfigjson. The secret will be mounted and used
+# to authenticate when pulling SBOMs from private registries.
+registryAuth:
+  existingSecret: ""
+
