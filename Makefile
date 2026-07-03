@@ -74,12 +74,17 @@ $(GOARCHS):
 	# Copy source to build/src
 	cp -r cmd internal go.mod go.sum build/src/
 	
-	# Copy gadgets to where main.go expects them
+	# micromize embeds the boundary gadgets
 	mkdir -p build/src/cmd/micromize/build
-	cp build/gadgets/*.tar build/src/cmd/micromize/build/
+	cp build/gadgets/fs-restrict.tar build/gadgets/cap-restrict.tar build/gadgets/ptrace-restrict.tar build/gadgets/socket-restrict.tar build/src/cmd/micromize/build/
 	
-	# Build
+	# sigward embeds its attestation gadget
+	mkdir -p build/src/cmd/sigward/build
+	cp build/gadgets/sigward.tar build/src/cmd/sigward/build/
+	
+	# Build both product binaries
 	cd build/src && GOOS=linux GOARCH=$@ CGO_ENABLED=0 go build -tags release -ldflags "$(LDFLAGS)" -o ../../$(OUTPUT_DIR)/micromize-linux-$@ ./cmd/micromize
+	cd build/src && GOOS=linux GOARCH=$@ CGO_ENABLED=0 go build -tags release -ldflags "$(LDFLAGS)" -o ../../$(OUTPUT_DIR)/sigward-linux-$@ ./cmd/sigward
 
 .PHONY: run-fs-restrict
 run-fs-restrict:

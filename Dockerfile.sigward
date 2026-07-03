@@ -13,9 +13,9 @@ WORKDIR /app
 COPY include/micromize /usr/include/micromize
 COPY gadgets gadgets
 
-# Build gadgets
+# Build the sigward attestation gadget
 RUN mkdir -p build/gadgets && \
-    for gadget in fs-restrict cap-restrict ptrace-restrict socket-restrict; do \
+    for gadget in sigward; do \
         echo "Building gadget: $gadget" && \
         ig image build \
             --local \
@@ -42,22 +42,21 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Copy built gadgets from the gadget-builder stage
-# They need to be placed where embeds.go expects them (cmd/micromize/build/)
-RUN mkdir -p cmd/micromize/build
-COPY --from=gadget-builder /app/build/gadgets/*.tar cmd/micromize/build/
+# Copy the built gadget where embeds.go expects it (cmd/sigward/build/)
+RUN mkdir -p cmd/sigward/build
+COPY --from=gadget-builder /app/build/gadgets/sigward.tar cmd/sigward/build/
 
 # Build the static binary
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build \
     -tags release \
     -ldflags "-X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=${IG_VERSION} -X main.Version=${IMAGE_TAG} -w -s -extldflags '-static'" \
-    -o /micromize \
-    ./cmd/micromize
+    -o /sigward \
+    ./cmd/sigward
 
 # Build the image
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=builder /micromize /micromize
+COPY --from=builder /sigward /sigward
 
 # Access to kernel debug filesystem (tracefs)
 VOLUME ["/sys/kernel/debug"]
@@ -85,4 +84,4 @@ VOLUME ["/host/usr"]
 VOLUME ["/host/run"]
 
 ENV HOST_ROOT=/host
-ENTRYPOINT ["/micromize"]
+ENTRYPOINT ["/sigward"]
