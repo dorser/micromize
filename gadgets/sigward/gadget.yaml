@@ -1,12 +1,12 @@
-name: binary-attestation
+name: sigward
 description: Attest binary and shared object integrity using IMA file hashes
-homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
-documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
-sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/binary-attestation
+homepageURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/sigward
+documentationURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/sigward
+sourceURL: https://github.com/micromize-dev/micromize/tree/main/gadgets/sigward
 annotations:
   enable-containers-datasource: "true"
 datasources:
-  binary_attestation:
+  sigward:
     fields:
       event_type:
         annotations:
