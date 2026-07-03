@@ -26,7 +26,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/micromize-dev/micromize/internal/attest"
 	"github.com/micromize-dev/micromize/internal/gadget"
 	k8sclient "github.com/micromize-dev/micromize/internal/k8s"
 	"github.com/micromize-dev/micromize/internal/logger"
@@ -40,7 +39,6 @@ const (
 	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/cap-restrict"
 	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
 	socketRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/socket-restrict"
-	sigwardGadgetImageRepo        = "ghcr.io/micromize-dev/micromize/sigward"
 )
 
 var (
@@ -116,7 +114,6 @@ func run(ctx context.Context) error {
 	defer runtimeManager.Close()
 
 	ociHandlerOp := operators.NewOCIHandler()
-	imaOp := attest.NewImaOperator()
 	eventTypeOp := operators.NewEventTypeOperator()
 	outputOp := operators.NewOutputOperator()
 
@@ -125,7 +122,7 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("creating local manager operator: %w", err)
 	}
 
-	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, imaOp, eventTypeOp, outputOp})
+	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, eventTypeOp, outputOp})
 
 	// Create gadget registry
 	registry := gadget.NewRegistry(contextManager, runtimeManager)
@@ -210,14 +207,6 @@ func run(ctx context.Context) error {
 		registry.Register("socket-restrict", &gadget.GadgetConfig{
 			Bytes:     socketRestrictGadgetBytes,
 			ImageName: fmt.Sprintf("%s:%s", socketRestrictGadgetImageRepo, Version),
-			Params:    commonParams,
-		})
-	}
-
-	if !disabled["sigward"] {
-		registry.Register("sigward", &gadget.GadgetConfig{
-			Bytes:     sigwardGadgetBytes,
-			ImageName: fmt.Sprintf("%s:%s", sigwardGadgetImageRepo, Version),
 			Params:    commonParams,
 		})
 	}
