@@ -12,7 +12,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  IG_VERSION: v0.51.1
+  IG_VERSION: v0.53.2
 
 jobs:
   release-gadgets:

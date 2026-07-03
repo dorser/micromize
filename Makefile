@@ -4,7 +4,7 @@ IMAGE_TAG ?= $(TAG)
 CLANG_FORMAT ?= clang-format
 OUTPUT_DIR := dist
 GOARCHS := amd64 arm64
-LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.51.1 \
+LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.version=v0.53.2 \
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
 GADGETS := fs-restrict cap-restrict ptrace-restrict socket-restrict sigward
@@ -155,8 +155,8 @@ dev-logs: ## Tail logs from all dev pods
 dev-status: ## Show dev pod status
 	kubectl get pods -n $(DEV_NAMESPACE) -l app.kubernetes.io/name=micromize -o wide
 
-IG_VERSION ?= v0.51.1
-IG_ARCHIVE_SHA256 ?= 3d8c47380607849f4a924246a9cf901d6c5205665fddabcfc6c7e9f706b8b754
+IG_VERSION ?= v0.53.2
+IG_ARCHIVE_SHA256 ?= 4eb164b04d2fbb2fc28b763a4aff9a81a4830f9e60c7c91c9e1206419ed7cf46
 SKIP_CHECKSUM ?= 0
 .PHONY: update-includes
 update-includes:
