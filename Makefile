@@ -8,7 +8,7 @@ LDFLAGS := -X github.com/inspektor-gadget/inspektor-gadget/internal/version.vers
            -X main.Version=$(IMAGE_TAG) \
            -w -s -extldflags "-static"
 GADGETS := fs-restrict cap-restrict ptrace-restrict socket-restrict sigward
-CONFORM_VERSION ?= v0.1.0-alpha.30
+CONFORM_VERSION ?= v0.1.0-alpha.31
 
 # This version number must be kept in sync with CI workflow lint one.
 LINTER_IMAGE ?= golangci/golangci-lint:v2.10.1
