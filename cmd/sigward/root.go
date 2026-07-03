@@ -68,7 +68,7 @@ func init() {
 	rootCmd.Version = Version
 	rootCmd.PersistentFlags().BoolVar(&enforce, "enforce", true, "Enforce restrictions")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
-	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all except 'sigward'). Supports exclusion with '!' prefix.")
+	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all namespaces). Supports exclusion with '!' prefix.")
 	rootCmd.PersistentFlags().StringVar(&filterImageDigest, "filter-image-digest", "", "Filter out containers running this image digest from monitoring (e.g. sha256:abc123...)")
 	rootCmd.PersistentFlags().StringVar(&exemptLabel, "exempt-label", "sigward.dev/exempt", "Kubernetes label key used to mark namespaces as exempt from monitoring (value must be 'true'). Set to empty string to disable. Changes take effect on restart.")
 }
