@@ -141,7 +141,7 @@ func run(ctx context.Context) error {
 			} else if len(exemptNS) > 0 {
 				slog.Info("Exempt namespaces discovered (startup only)", "namespaces", exemptNS, "label", exemptLabel)
 				for _, ns := range exemptNS {
-					nsFilter += ",!" + ns
+					nsFilter = utils.AppendNamespaceExclusion(nsFilter, ns)
 				}
 			}
 		}

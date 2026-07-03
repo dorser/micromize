@@ -73,6 +73,17 @@ func BuildNamespaceFilter(filterNamespaces, selfNamespace string) string {
 	return strings.Join(parts, ",")
 }
 
+// AppendNamespaceExclusion appends an exclusion ("!namespace") to a
+// comma-separated LocalManager k8s-namespace filter, avoiding a leading comma
+// when the filter is empty (which can happen for agents that do not self-exclude).
+func AppendNamespaceExclusion(filter, namespace string) string {
+	exclusion := "!" + namespace
+	if filter == "" {
+		return exclusion
+	}
+	return filter + "," + exclusion
+}
+
 func GetHostPidNamespaceID() (uint64, error) {
 	var stat syscall.Stat_t
 	if err := syscall.Stat("/proc/1/ns/pid", &stat); err != nil {

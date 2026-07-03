@@ -132,3 +132,24 @@ func TestBuildNamespaceFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestAppendNamespaceExclusion(t *testing.T) {
+	tests := []struct {
+		name      string
+		filter    string
+		namespace string
+		want      string
+	}{
+		{"empty filter yields no leading comma", "", "sigward", "!sigward"},
+		{"appends to a non-empty filter", "default", "sigward", "default,!sigward"},
+		{"appends to existing exclusions", "!micromize,default", "foo", "!micromize,default,!foo"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := AppendNamespaceExclusion(tt.filter, tt.namespace); got != tt.want {
+				t.Errorf("AppendNamespaceExclusion(%q, %q) = %q, want %q", tt.filter, tt.namespace, got, tt.want)
+			}
+		})
+	}
+}
