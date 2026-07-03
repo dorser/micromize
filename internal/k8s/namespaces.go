@@ -17,6 +17,7 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +27,33 @@ import (
 )
 
 const exemptLabelValue = "true"
+
+const (
+	// podNamespaceEnvVar can be populated via the Kubernetes Downward API
+	// (fieldRef: metadata.namespace).
+	podNamespaceEnvVar = "POD_NAMESPACE"
+	// serviceAccountNamespacePath is the namespace file mounted into every pod
+	// that has a service account token.
+	serviceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+)
+
+// CurrentNamespace returns the namespace the agent is running in. It is
+// discovered from the POD_NAMESPACE environment variable (Downward API) first,
+// then the in-cluster service account namespace file. When neither is available
+// (e.g. running outside Kubernetes), it returns fallback. This avoids hardcoding
+// the agent's namespace, which would otherwise let it monitor itself when the
+// chart is installed into an arbitrarily named namespace.
+func CurrentNamespace(fallback string) string {
+	if ns := strings.TrimSpace(os.Getenv(podNamespaceEnvVar)); ns != "" {
+		return ns
+	}
+	if data, err := os.ReadFile(serviceAccountNamespacePath); err == nil {
+		if ns := strings.TrimSpace(string(data)); ns != "" {
+			return ns
+		}
+	}
+	return fallback
+}
 
 // NewClient builds a Kubernetes client using in-cluster config, falling back
 // to the default kubeconfig for local development.

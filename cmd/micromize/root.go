@@ -132,7 +132,8 @@ func run(ctx context.Context) error {
 		return fmt.Errorf("getting host pid namespace ID: %w", err)
 	}
 
-	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, "micromize")
+	selfNamespace := k8sclient.CurrentNamespace("micromize")
+	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, selfNamespace)
 
 	// Discover namespaces exempt by label and append them as exclusions.
 	// Evaluated at startup only — a DaemonSet restart is required to pick up
