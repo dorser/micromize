@@ -8,4 +8,4 @@ To check logs:
 
   kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
 
-For more information, visit https://github.com/micromize-dev/sigward
+For more information, visit https://github.com/micromize-dev/micromize
