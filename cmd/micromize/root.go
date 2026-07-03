@@ -26,6 +26,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/micromize-dev/micromize/internal/attest"
 	"github.com/micromize-dev/micromize/internal/gadget"
 	k8sclient "github.com/micromize-dev/micromize/internal/k8s"
 	"github.com/micromize-dev/micromize/internal/logger"
@@ -115,7 +116,7 @@ func run(ctx context.Context) error {
 	defer runtimeManager.Close()
 
 	ociHandlerOp := operators.NewOCIHandler()
-	imaOp := operators.NewImaOperator()
+	imaOp := attest.NewImaOperator()
 	eventTypeOp := operators.NewEventTypeOperator()
 	outputOp := operators.NewOutputOperator()
 
