@@ -75,5 +75,8 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Build Docker image
+      - name: Build Micromize image
         run: docker build .
+
+      - name: Build Sigward image
+        run: docker build -f Dockerfile.sigward .
