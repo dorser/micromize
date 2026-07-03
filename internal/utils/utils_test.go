@@ -118,6 +118,9 @@ func TestBuildNamespaceFilter(t *testing.T) {
 		{"exclusion filter", "!kube-system", "sigward", "!sigward,!kube-system"},
 		{"empty segments skipped", "default,,kube-system,", "sigward", "!sigward,default,kube-system"},
 		{"whitespace trimmed", " default , kube-system ", "micromize", "!micromize,default,kube-system"},
+		{"no self-exclusion, empty filter means all", "", "", ""},
+		{"no self-exclusion keeps user filter", "default,kube-system", "", "default,kube-system"},
+		{"no self-exclusion respects user exclusion", "default,!kube-system", "", "default,!kube-system"},
 	}
 
 	for _, tt := range tests {

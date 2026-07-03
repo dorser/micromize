@@ -46,15 +46,17 @@ func BoolToInt(b bool) int {
 }
 
 // BuildNamespaceFilter constructs the LocalManager k8s-namespace filter value.
-// It always excludes the agent's own namespace (selfNamespace) and appends any
-// user-specified namespace filters, skipping empty segments. When
-// filterNamespaces is empty, only the self-exclusion is returned.
+// When selfNamespace is non-empty, the agent's own namespace is excluded
+// ("!<selfNamespace>"); when it is empty, no self-exclusion is added (the agent
+// monitors its own namespace too). User-specified namespace filters are appended
+// with empty segments skipped. An empty result means "all namespaces".
 func BuildNamespaceFilter(filterNamespaces, selfNamespace string) string {
-	exclude := "!" + selfNamespace
-	normalizedFilter := exclude
+	var parts []string
 
-	if filterNamespaces == "" {
-		return normalizedFilter
+	exclude := ""
+	if selfNamespace != "" {
+		exclude = "!" + selfNamespace
+		parts = append(parts, exclude)
 	}
 
 	for _, p := range strings.Split(filterNamespaces, ",") {
@@ -62,12 +64,13 @@ func BuildNamespaceFilter(filterNamespaces, selfNamespace string) string {
 		if nsPart == "" {
 			continue
 		}
-		if nsPart != exclude {
-			normalizedFilter += "," + nsPart
+		if exclude != "" && nsPart == exclude {
+			continue
 		}
+		parts = append(parts, nsPart)
 	}
 
-	return normalizedFilter
+	return strings.Join(parts, ",")
 }
 
 func GetHostPidNamespaceID() (uint64, error) {
