@@ -1,6 +1,6 @@
 module github.com/micromize-dev/micromize
 
-go 1.25.7
+go 1.26.4
 
 require (
 	github.com/cilium/ebpf v0.21.0
