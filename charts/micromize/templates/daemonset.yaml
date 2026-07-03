@@ -40,7 +40,8 @@ spec:
                 - SYS_ADMIN
                 # Required for reading kernel logs.
                 - SYSLOG
-                # Required for ptrace-based gadgets.
+                # Required to read /proc/<pid>/ns/* for container/namespace
+                # enrichment (kernel gates this behind ptrace_may_access).
                 - SYS_PTRACE
                 # Required for setting rlimits (e.g. memlock).
                 - SYS_RESOURCE
