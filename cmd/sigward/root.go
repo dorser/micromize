@@ -1,0 +1,199 @@
+// Copyright The micromize authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"context"
+	_ "embed"
+	"fmt"
+	"log/slog"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
+	"github.com/spf13/cobra"
+
+	"github.com/micromize-dev/micromize/internal/attest"
+	"github.com/micromize-dev/micromize/internal/gadget"
+	k8sclient "github.com/micromize-dev/micromize/internal/k8s"
+	"github.com/micromize-dev/micromize/internal/logger"
+	"github.com/micromize-dev/micromize/internal/operators"
+	"github.com/micromize-dev/micromize/internal/runtime"
+	"github.com/micromize-dev/micromize/internal/utils"
+)
+
+const sigwardGadgetImageRepo = "ghcr.io/micromize-dev/micromize/sigward"
+
+var (
+	enforce           bool
+	verbose           bool
+	filterNamespaces  string
+	filterImageDigest string
+	exemptLabel       string
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "sigward",
+	Short: "sigward enforces execution integrity for containerized applications",
+	Long:  `sigward verifies, in the kernel, that only cryptographically attested binaries and shared objects declared in a container image's signed SBOM are allowed to execute, using BPF LSM and IMA.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		logger.Setup(verbose)
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return run(cmd.Context())
+	},
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func init() {
+	rootCmd.Version = Version
+	rootCmd.PersistentFlags().BoolVar(&enforce, "enforce", true, "Enforce restrictions")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+	rootCmd.PersistentFlags().StringVar(&filterNamespaces, "filter-namespaces", "", "Comma-separated list of Kubernetes namespaces to monitor (empty means all except 'sigward'). Supports exclusion with '!' prefix.")
+	rootCmd.PersistentFlags().StringVar(&filterImageDigest, "filter-image-digest", "", "Filter out containers running this image digest from monitoring (e.g. sha256:abc123...)")
+	rootCmd.PersistentFlags().StringVar(&exemptLabel, "exempt-label", "sigward.dev/exempt", "Kubernetes label key used to mark namespaces as exempt from monitoring (value must be 'true'). Set to empty string to disable. Changes take effect on restart.")
+}
+
+func run(ctx context.Context) error {
+	slog.Info("Starting sigward...")
+
+	// Validate BPF LSM is enabled before starting
+	if err := utils.ValidateBPFLSM(); err != nil {
+		return fmt.Errorf("BPF LSM validation failed: %w", err)
+	}
+	slog.Info("BPF LSM is enabled")
+
+	if enforce {
+		slog.Info("Enforcement enabled")
+	} else {
+		slog.Info("Enforcement disabled (audit mode)")
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		slog.Info("Received shutdown signal")
+		cancel()
+	}()
+
+	runtimeManager, err := runtime.NewManager()
+	if err != nil {
+		return fmt.Errorf("initializing runtime manager: %w", err)
+	}
+
+	defer runtimeManager.Close()
+
+	ociHandlerOp := operators.NewOCIHandler()
+	imaOp := attest.NewImaOperator()
+	eventTypeOp := operators.NewEventTypeOperator()
+	outputOp := operators.NewOutputOperator()
+
+	localManagerOp, err := operators.NewLocalManager()
+	if err != nil {
+		return fmt.Errorf("creating local manager operator: %w", err)
+	}
+
+	contextManager := gadget.NewContextManager([]operators.DataOperator{ociHandlerOp, localManagerOp, imaOp, eventTypeOp, outputOp})
+
+	// Create gadget registry
+	registry := gadget.NewRegistry(contextManager, runtimeManager)
+
+	nsFilter := buildNamespaceFilter(filterNamespaces)
+
+	// Discover namespaces exempt by label and append them as exclusions.
+	// Evaluated at startup only — a DaemonSet restart is required to pick up
+	// changes to namespace labels.
+	if exemptLabel != "" {
+		k8s, err := k8sclient.NewClient()
+		if err != nil {
+			slog.Warn("Could not build Kubernetes client for exempt label discovery; skipping", "error", err)
+		} else {
+			exemptNS, err := k8sclient.ListExemptNamespaces(ctx, k8s, exemptLabel)
+			if err != nil {
+				slog.Warn("Could not list exempt namespaces; skipping", "label", exemptLabel, "error", err)
+			} else if len(exemptNS) > 0 {
+				slog.Info("Exempt namespaces discovered (startup only)", "namespaces", exemptNS, "label", exemptLabel)
+				for _, ns := range exemptNS {
+					nsFilter += ",!" + ns
+				}
+			}
+		}
+	}
+
+	slog.Info("Namespace filter", "filter", nsFilter)
+
+	commonParams := map[string]string{
+		"operator.oci.ebpf.enforce":           fmt.Sprintf("%d", utils.BoolToInt(enforce)),
+		"operator.LocalManager.k8s-namespace": nsFilter,
+	}
+
+	if filterImageDigest != "" {
+		digest := strings.TrimPrefix(filterImageDigest, "!")
+		commonParams["operator.LocalManager.runtime-containerimage-digest"] = "!" + digest
+		slog.Info("Filtering out containers by image digest", "digest", digest)
+	}
+
+	registry.Register("sigward", &gadget.GadgetConfig{
+		Bytes:     sigwardGadgetBytes,
+		ImageName: fmt.Sprintf("%s:%s", sigwardGadgetImageRepo, Version),
+		Params:    commonParams,
+	})
+
+	// Run all gadgets
+	if err := registry.RunAll(ctx); err != nil {
+		return fmt.Errorf("running gadgets: %w", err)
+	}
+
+	// Wait for context to be done (which happens on signal)
+	<-ctx.Done()
+	return nil
+}
+
+// buildNamespaceFilter constructs the k8s-namespace filter value.
+// It always excludes the "sigward" namespace and appends any user-specified
+// namespace filters. When filterNamespaces is empty, only "!sigward" is used.
+func buildNamespaceFilter(filterNamespaces string) string {
+	const excludeSigward = "!sigward"
+	normalizedFilter := excludeSigward
+
+	if filterNamespaces == "" {
+		return normalizedFilter
+	}
+
+	parts := strings.Split(filterNamespaces, ",")
+	for _, p := range parts {
+		nsPart := strings.TrimSpace(p)
+		if nsPart == "" {
+			continue
+		}
+		if nsPart != excludeSigward {
+			normalizedFilter += "," + nsPart
+		}
+	}
+
+	return normalizedFilter
+}
