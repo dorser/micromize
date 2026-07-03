@@ -139,3 +139,26 @@ func TestListExemptNamespaces(t *testing.T) {
 		})
 	}
 }
+
+func TestCurrentNamespace(t *testing.T) {
+	t.Run("returns POD_NAMESPACE env when set", func(t *testing.T) {
+		t.Setenv(podNamespaceEnvVar, "team-security")
+		if got := CurrentNamespace("micromize"); got != "team-security" {
+			t.Errorf("CurrentNamespace() = %q, want %q", got, "team-security")
+		}
+	})
+
+	t.Run("trims whitespace from env value", func(t *testing.T) {
+		t.Setenv(podNamespaceEnvVar, "  prod  ")
+		if got := CurrentNamespace("micromize"); got != "prod" {
+			t.Errorf("CurrentNamespace() = %q, want %q", got, "prod")
+		}
+	})
+
+	t.Run("falls back when env empty and no service account file", func(t *testing.T) {
+		t.Setenv(podNamespaceEnvVar, "")
+		if got := CurrentNamespace("sigward"); got != "sigward" {
+			t.Errorf("CurrentNamespace() = %q, want %q", got, "sigward")
+		}
+	})
+}

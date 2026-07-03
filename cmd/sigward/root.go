@@ -122,7 +122,8 @@ func run(ctx context.Context) error {
 	// Create gadget registry
 	registry := gadget.NewRegistry(contextManager, runtimeManager)
 
-	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, "sigward")
+	selfNamespace := k8sclient.CurrentNamespace("sigward")
+	nsFilter := utils.BuildNamespaceFilter(filterNamespaces, selfNamespace)
 
 	// Discover namespaces exempt by label and append them as exclusions.
 	// Evaluated at startup only — a DaemonSet restart is required to pick up
