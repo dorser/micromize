@@ -177,17 +177,23 @@ func populateExpectedHashes(gadgetCtx igoperators.GadgetContext, innerMaps *sync
 	for _, f := range files {
 		var key [maxFilepathLen]byte
 
-		if len(f.FileName) > maxFilepathLen {
-			slog.Error("SBOM file path exceeds maximum length", "file", f.FileName, "length", len(f.FileName))
-			continue
-		}
 		// Normalize SBOM filename to match kernel dentry path format.
 		// SPDX filenames use "./" prefix (e.g. "./hello"), while the kernel
 		// returns absolute paths from the mount root (e.g. "/hello").
 		name := f.FileName
-		name = strings.TrimPrefix(name, ".")
+		name = strings.TrimPrefix(name, "./")
 		if !strings.HasPrefix(name, "/") {
 			name = "/" + name
+		}
+
+		// Enforce the length limit AFTER normalization and leave room for the
+		// NUL terminator. The BPF side fills the key via bpf_probe_read_kernel_str
+		// (at most maxFilepathLen-1 chars + NUL), so a name of maxFilepathLen or
+		// more would be copied without a terminator here and never match the
+		// kernel key, silently causing "unattested" misses.
+		if len(name) >= maxFilepathLen {
+			slog.Error("SBOM file path exceeds maximum length", "file", f.FileName, "length", len(name))
+			continue
 		}
 		copy(key[:], name)
 
