@@ -119,7 +119,7 @@ dev-build: ## Build Docker image for dev deployment
 ifeq ($(strip $(DEV_REGISTRY)),)
 	$(error DEV_REGISTRY is required. Set it via environment or argument: make dev-build DEV_REGISTRY=myacr.azurecr.io)
 endif
-	docker build --no-cache -t $(DEV_REGISTRY)/micromize:$(DEV_TAG) .
+	docker build --no-cache -f Dockerfile.micromize -t $(DEV_REGISTRY)/micromize:$(DEV_TAG) .
 
 .PHONY: dev-push
 dev-push: ## Push dev image to registry
