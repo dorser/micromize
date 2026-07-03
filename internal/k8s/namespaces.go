@@ -32,10 +32,11 @@ const (
 	// podNamespaceEnvVar can be populated via the Kubernetes Downward API
 	// (fieldRef: metadata.namespace).
 	podNamespaceEnvVar = "POD_NAMESPACE"
-	// serviceAccountNamespacePath is the namespace file mounted into every pod
-	// that has a service account token.
-	serviceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 )
+
+// serviceAccountNamespacePath is the namespace file mounted into every pod that
+// has a service account token. It is a var so tests can override it.
+var serviceAccountNamespacePath = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 
 // CurrentNamespace returns the namespace the agent is running in. It is
 // discovered from the POD_NAMESPACE environment variable (Downward API) first,
