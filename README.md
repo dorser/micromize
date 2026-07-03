@@ -17,11 +17,13 @@ Tools may detect this. Few eliminate it.
 
 ## Philosophy
 
-Micromize doesn't care what happens inside the container. Instead, it enforces the boundaries. We don't scan for cryptominers because with Micromize, unauthorized binaries can't execute in the first place. You can't effectively protect against every poorly written application, but you can guarantee that nothing runs unless it was part of the original image.
+Micromize doesn't care what happens inside the container. Instead, it enforces the boundaries. You can't effectively protect against every poorly written application, but you can guarantee a container stays within the limits of what a container is meant to be.
 
 Micromize assumes containers are immutable, disposable, non-host-mutating, and explicit about privilege.
 
 If your workload violates those assumptions, Micromize blocks it or forces an explicit posture decision.
+
+> Want to go further and guarantee that only the exact, cryptographically signed binaries from your image can execute? See **[Sigward](#sigward)**, the execution-attestation product that ships from this repository.
 
 ## What Micromize Does
 
@@ -31,9 +33,17 @@ Today, Micromize attaches eBPF programs to LSM hooks and enforces:
 - **Capability restriction** — prevents privilege escalation via `unshare`/`clone`/`setns`
 - **Ptrace blocking** — eliminates ptrace-based debugging/injection attacks
 - **Socket restriction** — blocks `AF_ALG` (kernel crypto userspace API) socket usage in containers, mitigating CVE-2026-31431 and related attack surface
-- **Execution integrity** — SBOM + runtime hash validation via `bpf_ima_file_hash`
 
 Policies are loaded before container start and enforced at execution time. No runtime replacement. No learning mode. Kernel-native enforcement.
+
+## Sigward
+
+This repository is a monorepo that ships **two** products from a shared codebase:
+
+- **Micromize** (`cmd/micromize`) — the boundary-enforcement agent described above.
+- **[Sigward](gadgets/sigward)** (`cmd/sigward`) — execution attestation. Sigward verifies, in the kernel (BPF-LSM + IMA), that every binary and shared object a container runs matches a cryptographically signed SPDX SBOM attached to its image. Anything unattested or tampered with is blocked before it executes.
+
+They are separate deployables — separate binaries, images, and Helm charts (`charts/sigward`) — so Sigward's registry access, credentials, and `CONFIG_IMA` requirement never get forced onto a plain Micromize deployment. Deploy either or both; they compose at the LSM layer.
 
 ## Quickstart
 
@@ -82,7 +92,6 @@ helm install micromize ./charts/micromize \
 
 - Linux kernel 5.18+
 - BPF LSM enabled (`CONFIG_BPF_LSM=y`, boot with `lsm=...,bpf`)
-- IMA enabled (`CONFIG_IMA=y`) — required for execution integrity via `bpf_ima_file_hash`
 
 ## Development
 
