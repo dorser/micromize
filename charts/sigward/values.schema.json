@@ -101,6 +101,10 @@
           "description": "Name of an existing Kubernetes secret of type kubernetes.io/dockerconfigjson for private registry authentication"
         }
       }
+    },
+    "exemptLabel": {
+      "type": "string",
+      "description": "Kubernetes label key used to mark namespaces as exempt from monitoring (value must be 'true'). Empty string disables the feature."
     }
   }
 }
