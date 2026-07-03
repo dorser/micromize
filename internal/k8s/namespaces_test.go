@@ -16,6 +16,8 @@ package k8s
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -155,8 +157,27 @@ func TestCurrentNamespace(t *testing.T) {
 		}
 	})
 
+	t.Run("reads service account file when env unset", func(t *testing.T) {
+		t.Setenv(podNamespaceEnvVar, "")
+		path := filepath.Join(t.TempDir(), "namespace")
+		if err := os.WriteFile(path, []byte("prod-ns\n"), 0o600); err != nil {
+			t.Fatalf("writing namespace file: %v", err)
+		}
+		orig := serviceAccountNamespacePath
+		serviceAccountNamespacePath = path
+		t.Cleanup(func() { serviceAccountNamespacePath = orig })
+
+		if got := CurrentNamespace("fallback"); got != "prod-ns" {
+			t.Errorf("CurrentNamespace() = %q, want %q", got, "prod-ns")
+		}
+	})
+
 	t.Run("falls back when env empty and no service account file", func(t *testing.T) {
 		t.Setenv(podNamespaceEnvVar, "")
+		orig := serviceAccountNamespacePath
+		serviceAccountNamespacePath = filepath.Join(t.TempDir(), "does-not-exist")
+		t.Cleanup(func() { serviceAccountNamespacePath = orig })
+
 		if got := CurrentNamespace("sigward"); got != "sigward" {
 			t.Errorf("CurrentNamespace() = %q, want %q", got, "sigward")
 		}
