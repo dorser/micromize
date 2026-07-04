@@ -45,7 +45,7 @@ Once built (or if you want to run from the registry), you can use `ig run` or `k
 If you built the gadget locally, you can run it by referencing the image tag you used.
 
 ```bash
-sudo ig run ghcr.io/micromize-dev/micromize/cap-restrict:latest --verify-image=false
+sudo ig run ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest --verify-image=false
 ```
 
 ### Running from Registry
@@ -53,7 +53,7 @@ sudo ig run ghcr.io/micromize-dev/micromize/cap-restrict:latest --verify-image=f
 You can also run the gadgets directly from the container registry:
 
 ```bash
-sudo ig run ghcr.io/micromize-dev/micromize/cap-restrict:latest
+sudo ig run ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest
 ```
 
 ### Configuration Parameters
@@ -67,7 +67,7 @@ All gadgets support the following parameters:
 **Run in Audit Mode (Log only):**
 
 ```bash
-sudo ig run ghcr.io/micromize-dev/micromize/cap-restrict:latest --enforce=false
+sudo ig run ghcr.io/micromize-dev/micromize/gadgets/cap-restrict:latest --enforce=false
 ```
 
 ## Available Gadgets

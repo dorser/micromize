@@ -35,7 +35,7 @@ import (
 	"github.com/micromize-dev/micromize/internal/utils"
 )
 
-const sigwardGadgetImageRepo = "ghcr.io/micromize-dev/micromize/sigward"
+const sigwardGadgetImageRepo = "ghcr.io/micromize-dev/micromize/gadgets/sigward"
 
 var (
 	enforce           bool
