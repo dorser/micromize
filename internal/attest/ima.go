@@ -223,8 +223,16 @@ func populateExpectedHashes(gadgetCtx igoperators.GadgetContext, innerMaps *sync
 		return
 	}
 
-	// Track the inner map for cleanup on container removal
-	innerMaps.Store(mntnsID, innerMap)
+	// Track the inner map for cleanup on container removal. Close any map
+	// previously tracked for this mount namespace so a repeated CREATED event
+	// for the same mntns_id doesn't leak the superseded map's FD/memory.
+	if old, loaded := innerMaps.Swap(mntnsID, innerMap); loaded {
+		if oldMap, ok := old.(*ebpf.Map); ok && oldMap != nil {
+			if err := oldMap.Close(); err != nil {
+				slog.Debug("Failed to close superseded inner BPF map", "mntns_id", mntnsID, "error", err)
+			}
+		}
+	}
 
 	slog.Debug("Populated expected_hashes map", "mntns_id", mntnsID, "entries", len(files))
 }
