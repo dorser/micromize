@@ -168,9 +168,13 @@ func run(ctx context.Context) error {
 	}
 
 	if filterImageDigest != "" {
-		digest := strings.TrimPrefix(filterImageDigest, "!")
-		commonParams["operator.LocalManager.runtime-containerimage-digest"] = "!" + digest
-		slog.Info("Filtering out containers by image digest", "digest", digest)
+		digest := strings.TrimSpace(strings.TrimPrefix(filterImageDigest, "!"))
+		if digest == "" {
+			slog.Warn("Ignoring --filter-image-digest with an empty digest value", "value", filterImageDigest)
+		} else {
+			commonParams["operator.LocalManager.runtime-containerimage-digest"] = "!" + digest
+			slog.Info("Filtering out containers by image digest", "digest", digest)
+		}
 	}
 
 	if !disabled["fs-restrict"] {
