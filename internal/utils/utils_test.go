@@ -121,6 +121,7 @@ func TestBuildNamespaceFilter(t *testing.T) {
 		{"no self-exclusion, empty filter means all", "", "", ""},
 		{"no self-exclusion keeps user filter", "default,kube-system", "", "default,kube-system"},
 		{"no self-exclusion respects user exclusion", "default,!kube-system", "", "default,!kube-system"},
+		{"whitespace self-namespace means no exclusion", "default", "  ", "default"},
 	}
 
 	for _, tt := range tests {

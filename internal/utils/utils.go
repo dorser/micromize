@@ -54,7 +54,7 @@ func BuildNamespaceFilter(filterNamespaces, selfNamespace string) string {
 	var parts []string
 
 	exclude := ""
-	if selfNamespace != "" {
+	if selfNamespace = strings.TrimSpace(selfNamespace); selfNamespace != "" {
 		exclude = "!" + selfNamespace
 		parts = append(parts, exclude)
 	}
