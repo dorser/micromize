@@ -19,10 +19,10 @@ RUN mkdir -p build/gadgets && \
         echo "Building gadget: $gadget" && \
         ig image build \
             --local \
-            -t ghcr.io/micromize-dev/micromize/${gadget}:${IMAGE_TAG} \
+            -t ghcr.io/micromize-dev/micromize/gadgets/${gadget}:${IMAGE_TAG} \
             gadgets/${gadget} && \
         ig image export \
-            ghcr.io/micromize-dev/micromize/${gadget}:${IMAGE_TAG} \
+            ghcr.io/micromize-dev/micromize/gadgets/${gadget}:${IMAGE_TAG} \
             build/gadgets/${gadget}.tar; \
     done
 

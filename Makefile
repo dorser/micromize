@@ -60,12 +60,12 @@ build-app: test $(GOARCHS)
 
 $(GADGETS):
 	sudo -E IG_SOURCE_PATH=$(CURDIR) ig image build \
-		-t $(CONTAINER_REPO)/$@:$(IMAGE_TAG) \
+		-t $(CONTAINER_REPO)/gadgets/$@:$(IMAGE_TAG) \
 		--update-metadata gadgets/$@
 	
 	mkdir -p build/gadgets
 	
-	sudo -E ig image export $(CONTAINER_REPO)/$@:$(IMAGE_TAG) build/gadgets/$@.tar
+	sudo -E ig image export $(CONTAINER_REPO)/gadgets/$@:$(IMAGE_TAG) build/gadgets/$@.tar
 
 $(GOARCHS):
 	@mkdir -p $(OUTPUT_DIR)
@@ -88,20 +88,20 @@ $(GOARCHS):
 
 .PHONY: run-fs-restrict
 run-fs-restrict:
-	sudo -E ig run $(CONTAINER_REPO)/fs-restrict:$(IMAGE_TAG) $$PARAMS
+	sudo -E ig run $(CONTAINER_REPO)/gadgets/fs-restrict:$(IMAGE_TAG) $$PARAMS
 
 .PHONY: run-cap-restrict
 run-cap-restrict:
-	sudo -E ig run $(CONTAINER_REPO)/cap-restrict:$(IMAGE_TAG) $$PARAMS
+	sudo -E ig run $(CONTAINER_REPO)/gadgets/cap-restrict:$(IMAGE_TAG) $$PARAMS
 
 .PHONY: run-socket-restrict
 run-socket-restrict:
-	sudo -E ig run $(CONTAINER_REPO)/socket-restrict:$(IMAGE_TAG) $$PARAMS
+	sudo -E ig run $(CONTAINER_REPO)/gadgets/socket-restrict:$(IMAGE_TAG) $$PARAMS
 
 .PHONY: push
 push:
 	for gadget in $(GADGETS); do \
-		sudo -E ig image push $(CONTAINER_REPO)/$$gadget:$(IMAGE_TAG); \
+		sudo -E ig image push $(CONTAINER_REPO)/gadgets/$$gadget:$(IMAGE_TAG); \
 	done
 	
 .PHONY: clang-format

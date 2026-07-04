@@ -35,10 +35,10 @@ import (
 )
 
 const (
-	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/fs-restrict"
-	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/cap-restrict"
-	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/ptrace-restrict"
-	socketRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/socket-restrict"
+	fsRestrictGadgetImageRepo     = "ghcr.io/micromize-dev/micromize/gadgets/fs-restrict"
+	capRestrictGadgetImageRepo    = "ghcr.io/micromize-dev/micromize/gadgets/cap-restrict"
+	ptraceRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/gadgets/ptrace-restrict"
+	socketRestrictGadgetImageRepo = "ghcr.io/micromize-dev/micromize/gadgets/socket-restrict"
 )
 
 var (
